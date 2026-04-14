@@ -39,6 +39,15 @@
         }
       ]
     ],
-    "scheme": "fichax"
+    "scheme": "fichax",
+    "extra": {
+      "router": {
+        "origin": false,
+        "asyncRoutes": false
+      },
+      "eas": {
+        "projectId": "70b5f4ef-4884-462d-932c-4c8d7949baac"
+      }
+    }
   }
 }
