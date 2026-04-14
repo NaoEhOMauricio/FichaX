@@ -1,0 +1,29 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle for Android adaptive icon -->
+  <circle cx="512" cy="512" r="512" fill="#007AFF"/>
+
+  <!-- Document/Ficha Icon -->
+  <g transform="translate(256, 200)">
+    <!-- Main document -->
+    <rect x="0" y="0" width="512" height="624" rx="32" fill="white"/>
+
+    <!-- Header lines -->
+    <rect x="64" y="80" width="384" height="24" rx="12" fill="#007AFF" opacity="0.3"/>
+    <rect x="64" y="136" width="256" height="20" rx="10" fill="#007AFF" opacity="0.2"/>
+
+    <!-- Content lines -->
+    <rect x="64" y="220" width="384" height="16" rx="8" fill="#E5E5E5"/>
+    <rect x="64" y="268" width="384" height="16" rx="8" fill="#E5E5E5"/>
+    <rect x="64" y="316" width="320" height="16" rx="8" fill="#E5E5E5"/>
+
+    <rect x="64" y="380" width="384" height="16" rx="8" fill="#E5E5E5"/>
+    <rect x="64" y="428" width="384" height="16" rx="8" fill="#E5E5E5"/>
+    <rect x="64" y="476" width="256" height="16" rx="8" fill="#E5E5E5"/>
+
+    <!-- X Mark accent -->
+    <g transform="translate(384, 480)">
+      <rect x="0" y="0" width="80" height="80" rx="16" fill="#007AFF"/>
+      <path d="M 20 20 L 60 60 M 60 20 L 20 60" stroke="white" stroke-width="8" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>

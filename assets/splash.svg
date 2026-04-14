@@ -1,0 +1,33 @@
+<svg width="1284" height="2778" viewBox="0 0 1284 2778" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1284" height="2778" fill="#007AFF"/>
+
+  <!-- Logo centered -->
+  <g transform="translate(342, 989)">
+    <!-- Main document -->
+    <rect x="0" y="0" width="600" height="800" rx="40" fill="white"/>
+
+    <!-- Header -->
+    <rect x="80" y="100" width="440" height="32" rx="16" fill="#007AFF" opacity="0.3"/>
+    <rect x="80" y="164" width="300" height="24" rx="12" fill="#007AFF" opacity="0.2"/>
+
+    <!-- Content lines -->
+    <rect x="80" y="280" width="440" height="20" rx="10" fill="#E5E5E5"/>
+    <rect x="80" y="340" width="440" height="20" rx="10" fill="#E5E5E5"/>
+    <rect x="80" y="400" width="360" height="20" rx="10" fill="#E5E5E5"/>
+
+    <rect x="80" y="480" width="440" height="20" rx="10" fill="#E5E5E5"/>
+    <rect x="80" y="540" width="440" height="20" rx="10" fill="#E5E5E5"/>
+    <rect x="80" y="600" width="300" height="20" rx="10" fill="#E5E5E5"/>
+
+    <!-- X Mark -->
+    <g transform="translate(440, 640)">
+      <rect x="0" y="0" width="100" height="100" rx="20" fill="#007AFF"/>
+      <path d="M 25 25 L 75 75 M 75 25 L 25 75" stroke="white" stroke-width="10" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- Text -->
+  <text x="642" y="1950" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" fill="white" text-anchor="middle">FichaX</text>
+  <text x="642" y="2020" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="400" fill="white" text-anchor="middle" opacity="0.9">Gestão de fichas técnicas</text>
+</svg>
