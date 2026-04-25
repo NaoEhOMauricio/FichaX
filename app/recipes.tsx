@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, Alert, Modal, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -126,6 +126,9 @@ export default function Recipes() {
   const [newIngCost, setNewIngCost] = useState('');
   const [newIngWeight, setNewIngWeight] = useState('');
   const [newIngUnit, setNewIngUnit] = useState('kg');
+  // Ingredientes criados nesta sessão mas ainda não salvos no banco
+  const [pendingIngredients, setPendingIngredients] = useState<Ingredient[]>([]);
+  const tempIdCounter = useRef(-1);
 
   useEffect(() => {
     checkAuth();
@@ -327,6 +330,9 @@ export default function Recipes() {
   };
 
   const clearForm = () => {
+    // Remove ingredientes temporários da lista local
+    setIngredients(prev => prev.filter(ing => ing.id > 0));
+    setPendingIngredients([]);
     setRecipeName('');
     setRecipeItems([]);
     setInstructions('');
@@ -390,40 +396,77 @@ export default function Recipes() {
     doSaveRecipe();
   };
 
-  const quickAddIngredient = async () => {
+  const quickAddIngredient = () => {
     const ingCost = parseFloat(newIngCost);
     const ingWeight = parseFloat(newIngWeight);
     if (!newIngName.trim() || isNaN(ingCost) || isNaN(ingWeight) || ingWeight <= 0) {
       Alert.alert('Erro', 'Preencha nome, custo e quantidade válidos.');
       return;
     }
-    setLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    const { error } = await supabase.from('ingredients').insert([{
+
+    const duplicate = [...ingredients, ...pendingIngredients].some(
+      ing => ing.name.trim().toLowerCase() === newIngName.trim().toLowerCase()
+    );
+    if (duplicate) {
+      Alert.alert('Nome duplicado', 'Já existe um ingrediente com esse nome.');
+      return;
+    }
+
+    const tempId = tempIdCounter.current--;
+    const tempIngredient: Ingredient = {
+      id: tempId,
       name: newIngName.trim(),
       cost: ingCost,
       package_weight: ingWeight,
       package_unit: newIngUnit,
-      user_id: session?.user?.id,
-    }]);
-    setLoading(false);
-    if (error) {
-      Alert.alert('Erro ao adicionar', error.message);
-    } else {
-      setShowNewIngredientModal(false);
-      await fetchIngredients();
-      // Preenche a busca com o nome do ingrediente recém-criado
-      setSearchText(newIngName.trim());
-      setShowSearchResults(true);
-    }
+    };
+
+    setPendingIngredients(prev => [...prev, tempIngredient]);
+    setIngredients(prev =>
+      [...prev, tempIngredient].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+    );
+    setShowNewIngredientModal(false);
+    setSearchText(newIngName.trim());
+    setShowSearchResults(true);
+    setNewIngName('');
+    setNewIngCost('');
+    setNewIngWeight('');
+    setNewIngUnit('kg');
   };
 
   const doSaveRecipe = async () => {
     setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
+
+    // Salva ingredientes pendentes antes de salvar a receita
+    let finalItems = [...recipeItems];
+    for (const pending of pendingIngredients) {
+      const { data: inserted, error: ingErr } = await supabase
+        .from('ingredients')
+        .insert([{
+          name: pending.name,
+          cost: pending.cost,
+          package_weight: pending.package_weight,
+          package_unit: pending.package_unit,
+          user_id: session?.user?.id,
+        }])
+        .select()
+        .single();
+
+      if (ingErr) {
+        setLoading(false);
+        Alert.alert('Erro ao salvar ingrediente', `"${pending.name}": ${ingErr.message}`);
+        return;
+      }
+      // Troca o ID temporário (negativo) pelo ID real
+      finalItems = finalItems.map(item =>
+        item.id === pending.id ? { ...item, id: inserted.id } : item
+      );
+    }
+
     const payload = {
       name: recipeName.trim(),
-      ingredients: recipeItems,
+      ingredients: finalItems,
       instructions,
       markup_percent: showPricingSection ? (parseFloat(markupPercent) || 300) : null,
       category: category || null,
@@ -505,9 +548,26 @@ export default function Recipes() {
   // Cálculos
   const totalCost = recipeItems.reduce((sum, item) => sum + item.cost, 0);
   const markup = showPricingSection ? (parseFloat(markupPercent) || 0) : 0;
-  const sellingPrice = markup > 0 ? totalCost * (1 + markup / 100) : totalCost;
-  const profitMargin = sellingPrice > 0 ? ((sellingPrice - totalCost) / sellingPrice) * 100 : 0;
-  const profit = sellingPrice - totalCost;
+
+  // Base do markup depende se porção está ativa ou não
+  const portionWeightVal = parseFloat(portionWeight);
+  const totalWeightVal   = parseFloat(totalWeight);
+  const hasPortion = showPortionSection && portionWeightVal > 0;
+
+  const effectiveWeightInBase = (totalWeightVal > 0)
+    ? convertToBase(totalWeightVal, totalWeightUnit)
+    : rawWeightInBase;
+  const portionInBase   = hasPortion ? convertToBase(portionWeightVal, portionWeightUnit) : 0;
+  const numPortions     = (hasPortion && effectiveWeightInBase > 0 && portionInBase > 0)
+    ? effectiveWeightInBase / portionInBase
+    : 0;
+  const costPerPortion  = (hasPortion && numPortions > 0) ? totalCost / numPortions : 0;
+
+  // Se tem porção: markup sobre custo por porção. Sem porção: markup sobre custo total.
+  const baseCost     = hasPortion ? costPerPortion : totalCost;
+  const sellingPrice = markup > 0 ? baseCost * (1 + markup / 100) : baseCost;
+  const profit       = sellingPrice - baseCost;
+  const profitMargin = sellingPrice > 0 ? (profit / sellingPrice) * 100 : 0;
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -536,7 +596,7 @@ export default function Recipes() {
             <TextInput
               style={styles.input}
               placeholder="Nome da receita"
-              placeholderTextColor="#999"
+              placeholderTextColor="#94a3b8"
               value={recipeName}
               onChangeText={setRecipeName}
               editable={!loading}
@@ -544,7 +604,7 @@ export default function Recipes() {
             <TextInput
               style={styles.input}
               placeholder="Categoria (ex: Entrada, Prato Principal, Sobremesa)"
-              placeholderTextColor="#999"
+              placeholderTextColor="#94a3b8"
               value={category}
               onChangeText={setCategory}
               editable={!loading}
@@ -556,11 +616,11 @@ export default function Recipes() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🔍 Pesquisar Itens</Text>
           <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#007AFF" style={styles.searchIcon} />
+            <Ionicons name="search" size={20} color="#6366f1" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
               placeholder="Buscar ingredientes ou receitas..."
-              placeholderTextColor="#999"
+              placeholderTextColor="#94a3b8"
               value={searchText}
               onChangeText={(text) => {
                 setSearchText(text);
@@ -569,7 +629,7 @@ export default function Recipes() {
             />
             {searchText !== '' && (
               <TouchableOpacity style={styles.clearButton} onPress={() => { setSearchText(''); setShowSearchResults(false); }}>
-                <Ionicons name="close-circle" size={20} color="#999" />
+                <Ionicons name="close-circle" size={20} color="#94a3b8" />
               </TouchableOpacity>
             )}
           </View>
@@ -579,12 +639,11 @@ export default function Recipes() {
             <View style={styles.searchResultsContainer}>
               {searchResults.length === 0 ? (
                 <View style={styles.noResultsContainer}>
-                  <Ionicons name="search-outline" size={20} color="#999" />
+                  <Ionicons name="search-outline" size={20} color="#94a3b8" />
                   <Text style={styles.noResultsText}>Nenhum resultado para "{searchText}"</Text>
                   <TouchableOpacity
                     style={styles.addNewItemButton}
                     onPress={() => {
-                      setSavedSearchText(searchText);
                       setNewIngName(searchText);
                       setNewIngCost('');
                       setNewIngWeight('');
@@ -593,7 +652,7 @@ export default function Recipes() {
                     }}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="add-circle-outline" size={18} color="#007AFF" />
+                    <Ionicons name="add-circle-outline" size={18} color="#6366f1" />
                     <Text style={styles.addNewItemText}>Cadastrar "{searchText}"</Text>
                   </TouchableOpacity>
                 </View>
@@ -633,7 +692,7 @@ export default function Recipes() {
                           }
                         </Text>
                       </View>
-                      <Ionicons name="add-circle" size={24} color="#007AFF" />
+                      <Ionicons name="add-circle" size={24} color="#6366f1" />
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -647,7 +706,7 @@ export default function Recipes() {
           <Text style={styles.sectionTitle}>📋 Itens da Receita ({recipeItems.length})</Text>
           {recipeItems.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="restaurant-outline" size={48} color="#ccc" />
+              <Ionicons name="restaurant-outline" size={48} color="#334155" />
               <Text style={styles.emptyStateText}>Nenhum item adicionado</Text>
               <Text style={styles.emptyStateSubtext}>Busque ingredientes ou receitas acima</Text>
             </View>
@@ -670,7 +729,7 @@ export default function Recipes() {
                     <Text style={styles.amountText}>
                       {item.amount > 0 ? `${item.amount} ${item.unit}` : 'Definir qtd'}
                     </Text>
-                    <Ionicons name="pencil" size={14} color="#007AFF" />
+                    <Ionicons name="pencil" size={14} color="#6366f1" />
                   </TouchableOpacity>
                   <Text style={styles.itemCostText}>{formatCurrency(item.cost)}</Text>
                 </View>
@@ -686,7 +745,7 @@ export default function Recipes() {
             <TextInput
               style={styles.textArea}
               placeholder="Descreva o modo de preparo aqui..."
-              placeholderTextColor="#999"
+              placeholderTextColor="#94a3b8"
               value={instructions}
               onChangeText={setInstructions}
               multiline
@@ -747,7 +806,7 @@ export default function Recipes() {
                       onChangeText={setMarkupPercent}
                       keyboardType="decimal-pad"
                       placeholder="100"
-                      placeholderTextColor="#999"
+                      placeholderTextColor="#94a3b8"
                     />
                     <Text style={styles.percentSign}>%</Text>
                     <TouchableOpacity
@@ -760,12 +819,22 @@ export default function Recipes() {
 
                   <View style={styles.divider} />
 
+                  {hasPortion && (
+                    <View style={styles.calcRow}>
+                      <Text style={styles.calcLabel}>Custo por porção:</Text>
+                      <Text style={styles.calcValue}>{formatCurrency(costPerPortion)}</Text>
+                    </View>
+                  )}
                   <View style={styles.calcRow}>
-                    <Text style={styles.calcLabel}>Preço de Venda:</Text>
+                    <Text style={styles.calcLabel}>
+                      {hasPortion ? 'Preço de Venda (por porção):' : 'Preço de Venda (total):'}
+                    </Text>
                     <Text style={styles.calcValueBig}>{formatCurrency(sellingPrice)}</Text>
                   </View>
                   <View style={styles.calcRow}>
-                    <Text style={styles.calcLabel}>Lucro:</Text>
+                    <Text style={styles.calcLabel}>
+                      {hasPortion ? 'Lucro por porção:' : 'Lucro total:'}
+                    </Text>
                     <Text style={[styles.calcValue, { color: profit >= 0 ? '#4CAF50' : '#f44336' }]}>
                       {formatCurrency(profit)}
                     </Text>
@@ -776,6 +845,14 @@ export default function Recipes() {
                       {profitMargin.toFixed(1)}%
                     </Text>
                   </View>
+                  {hasPortion && numPortions > 0 && (
+                    <View style={styles.calcRow}>
+                      <Text style={styles.calcLabel}>Faturamento total ({numPortions % 1 === 0 ? numPortions.toFixed(0) : numPortions.toFixed(1)} porções):</Text>
+                      <Text style={[styles.calcValue, { color: '#6366f1', fontWeight: '700' }]}>
+                        {formatCurrency(sellingPrice * numPortions)}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               )}
             </View>
@@ -832,24 +909,24 @@ export default function Recipes() {
                 activeOpacity={0.7}
               >
                 <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-                  <Ionicons name="scale-outline" size={18} color="#007AFF" />
+                  <Ionicons name="scale-outline" size={18} color="#6366f1" />
                   <View>
                     <Text style={styles.collapsibleTitle}>Peso pronto</Text>
                     <Text style={styles.collapsibleHint}>Cozimento, evaporação, etc.</Text>
                   </View>
                 </View>
-                <Ionicons name={showYieldSection ? 'chevron-up' : 'chevron-down'} size={20} color="#007AFF" />
+                <Ionicons name={showYieldSection ? 'chevron-up' : 'chevron-down'} size={20} color="#6366f1" />
               </TouchableOpacity>
 
               {showYieldSection && (
                 <View style={styles.collapsibleContent}>
                   <View style={styles.yieldRow}>
                     <View style={styles.yieldInputWrap}>
-                      <Ionicons name="scale-outline" size={16} color="#007AFF" />
+                      <Ionicons name="scale-outline" size={16} color="#6366f1" />
                       <TextInput
                         style={styles.yieldInput}
                         placeholder="Peso final pronto"
-                        placeholderTextColor="#999"
+                        placeholderTextColor="#94a3b8"
                         value={totalWeight}
                         onChangeText={setTotalWeight}
                         keyboardType="decimal-pad"
@@ -899,13 +976,13 @@ export default function Recipes() {
                     const hasLoss = Math.abs(lossPercent) > 0.1;
                     const isLoss = lossPercent > 0;
                     return hasLoss ? (
-                      <View style={[styles.lossBadgeRow, { backgroundColor: isLoss ? '#FFF5F5' : '#F0FFF4' }]}>
+                      <View style={[styles.lossBadgeRow, { backgroundColor: isLoss ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)' }]}>
                         <Ionicons
                           name={isLoss ? 'trending-down' : 'trending-up'}
                           size={18}
-                          color={isLoss ? '#E53935' : '#4CAF50'}
+                          color={isLoss ? '#ef4444' : '#22c55e'}
                         />
-                        <Text style={[styles.lossBadgeText, { color: isLoss ? '#C62828' : '#2E7D32' }]}>
+                        <Text style={[styles.lossBadgeText, { color: isLoss ? '#ef4444' : '#22c55e' }]}>
                           {isLoss ? 'Perda' : 'Ganho'} de {Math.abs(lossPercent).toFixed(1)}% no peso
                         </Text>
                       </View>
@@ -947,7 +1024,7 @@ export default function Recipes() {
                       <TextInput
                         style={styles.yieldInput}
                         placeholder="Ex: 180"
-                        placeholderTextColor="#999"
+                        placeholderTextColor="#94a3b8"
                         value={portionWeight}
                         onChangeText={setPortionWeight}
                         keyboardType="decimal-pad"
@@ -994,16 +1071,7 @@ export default function Recipes() {
 
                   {/* Resumo de porções */}
                   {(() => {
-                    const pw = parseFloat(portionWeight);
-                    if (!pw || pw <= 0) return null;
-                    const readyWeight = parseFloat(totalWeight);
-                    const effectiveInBase = (readyWeight && readyWeight > 0)
-                      ? convertToBase(readyWeight, totalWeightUnit)
-                      : rawWeightInBase;
-                    const portionInBase = convertToBase(pw, portionWeightUnit);
-                    if (effectiveInBase <= 0 || portionInBase <= 0) return null;
-                    const numPortions = effectiveInBase / portionInBase;
-                    const costPerPortion = totalCost / numPortions;
+                    if (!hasPortion || numPortions <= 0) return null;
                     return (
                       <View style={styles.portionSummary}>
                         <View style={styles.calcRow}>
@@ -1017,7 +1085,7 @@ export default function Recipes() {
                         </View>
                         <View style={styles.calcRow}>
                           <Text style={styles.calcLabel}>Cada porção:</Text>
-                          <Text style={styles.calcValue}>{pw} {portionWeightUnit}</Text>
+                          <Text style={styles.calcValue}>{portionWeight} {portionWeightUnit}</Text>
                         </View>
                         <View style={styles.calcRow}>
                           <Text style={styles.calcLabel}>Custo por porção:</Text>
@@ -1114,24 +1182,24 @@ export default function Recipes() {
           <Text style={styles.sectionTitle}>📚 Receitas Salvas ({recipes.length})</Text>
           {recipes.length > 0 && (
             <View style={styles.savedSearchRow}>
-              <Ionicons name="search-outline" size={18} color="#999" />
+              <Ionicons name="search-outline" size={18} color="#94a3b8" />
               <TextInput
                 style={styles.savedSearchInput}
                 placeholder="Buscar receita salva..."
-                placeholderTextColor="#bbb"
+                placeholderTextColor="#94a3b8"
                 value={savedSearchText}
                 onChangeText={setSavedSearchText}
               />
               {savedSearchText !== '' && (
                 <TouchableOpacity onPress={() => setSavedSearchText('')}>
-                  <Ionicons name="close-circle" size={18} color="#ccc" />
+                  <Ionicons name="close-circle" size={18} color="#334155" />
                 </TouchableOpacity>
               )}
             </View>
           )}
           {recipes.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="book-outline" size={48} color="#ccc" />
+              <Ionicons name="book-outline" size={48} color="#334155" />
               <Text style={styles.emptyStateText}>Nenhuma receita salva</Text>
             </View>
           ) : (
@@ -1184,8 +1252,8 @@ export default function Recipes() {
                     if (recipe.total_weight && recipe.total_weight > 0) {
                       return (
                         <View style={styles.savedRecipeBadge}>
-                          <Ionicons name="scale-outline" size={13} color="#007AFF" />
-                          <Text style={[styles.savedRecipeBadgeText, {color: '#007AFF'}]}>
+                          <Ionicons name="scale-outline" size={13} color="#6366f1" />
+                          <Text style={[styles.savedRecipeBadgeText, {color: '#6366f1'}]}>
                             Prato: {recipe.total_weight} {recipe.total_weight_unit || 'g'} (peso pronto)
                           </Text>
                         </View>
@@ -1235,7 +1303,7 @@ export default function Recipes() {
                   {/* Info do ingrediente original */}
                   {ingredient && (
                     <View style={styles.ingredientInfoBox}>
-                      <Ionicons name="information-circle-outline" size={16} color="#007AFF" />
+                      <Ionicons name="information-circle-outline" size={16} color="#6366f1" />
                       <Text style={styles.ingredientInfoText}>
                         Pacote: {formatCurrency(ingredient.cost)} / {ingredient.package_weight} {ingredient.package_unit}
                       </Text>
@@ -1245,7 +1313,7 @@ export default function Recipes() {
                   {/* Info de rendimento da receita */}
                   {!isIngredient && recipeRef && (
                     <View style={styles.ingredientInfoBox}>
-                      <Ionicons name="restaurant-outline" size={16} color="#007AFF" />
+                      <Ionicons name="restaurant-outline" size={16} color="#6366f1" />
                       <Text style={styles.ingredientInfoText}>
                         Custo total: {formatCurrency(
                           (recipeRef.ingredients || []).reduce((sum: number, ri: RecipeItem) => sum + (ri.cost || 0), 0)
@@ -1326,7 +1394,7 @@ export default function Recipes() {
                     <TextInput
                       style={[styles.input, { flex: 1 }]}
                       placeholder={isWeightMode ? 'Quantidade em peso' : !isIngredient ? 'Nº de porções' : 'Quantidade'}
-                      placeholderTextColor="#999"
+                      placeholderTextColor="#94a3b8"
                       value={editAmount}
                       onChangeText={setEditAmount}
                       keyboardType="decimal-pad"
@@ -1418,7 +1486,7 @@ export default function Recipes() {
             <TextInput
               style={styles.quickIngInput}
               placeholder="Nome do ingrediente"
-              placeholderTextColor="#999"
+              placeholderTextColor="#94a3b8"
               value={newIngName}
               onChangeText={setNewIngName}
               editable={!loading}
@@ -1428,7 +1496,7 @@ export default function Recipes() {
               <TextInput
                 style={[styles.quickIngInput, {flex: 1}]}
                 placeholder="Custo (R$)"
-                placeholderTextColor="#999"
+                placeholderTextColor="#94a3b8"
                 value={newIngCost}
                 onChangeText={setNewIngCost}
                 keyboardType="decimal-pad"
@@ -1437,7 +1505,7 @@ export default function Recipes() {
               <TextInput
                 style={[styles.quickIngInput, {flex: 1}]}
                 placeholder="Quantidade"
-                placeholderTextColor="#999"
+                placeholderTextColor="#94a3b8"
                 value={newIngWeight}
                 onChangeText={setNewIngWeight}
                 keyboardType="decimal-pad"
@@ -1449,8 +1517,8 @@ export default function Recipes() {
             {UNIT_GROUPS.map(group => (
               <View key={group.category} style={{marginBottom: 8}}>
                 <View style={{flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4}}>
-                  <Ionicons name={group.icon as any} size={13} color="#999" />
-                  <Text style={{fontSize: 12, color: '#999'}}>{group.label}</Text>
+                  <Ionicons name={group.icon as any} size={13} color="#94a3b8" />
+                  <Text style={{fontSize: 12, color: '#94a3b8'}}>{group.label}</Text>
                 </View>
                 <View style={{flexDirection: 'row', gap: 6}}>
                   {group.units.map(u => (
@@ -1496,20 +1564,20 @@ export default function Recipes() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#0f172a',
   },
   backButton: {
     marginBottom: 8,
     alignSelf: 'flex-start',
   },
   header: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366f1',
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 20,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-    shadowColor: '#007AFF',
+    shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1518,13 +1586,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: 'white',
+    color: '#f1f5f9',
     marginBottom: 4,
     letterSpacing: 0.3,
   },
   subtitle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.85)',
+    color: '#94a3b8',
   },
   scrollContent: {
     flex: 1,
@@ -1537,29 +1605,29 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: '#f1f5f9',
     marginBottom: 12,
     letterSpacing: 0.2,
   },
   warningBanner: {
-    backgroundColor: '#FFF8E1',
-    borderColor: '#FFB300',
+    backgroundColor: 'rgba(245,158,11,0.1)',
+    borderColor: '#f59e0b',
     borderWidth: 1,
     padding: 14,
     borderRadius: 12,
     marginHorizontal: 20,
     marginTop: 15,
     borderLeftWidth: 4,
-    borderLeftColor: '#FFB300',
+    borderLeftColor: '#f59e0b',
   },
   warningText: {
-    color: '#7B6B00',
+    color: '#f59e0b',
     fontWeight: '600',
     fontSize: 13,
     lineHeight: 18,
   },
   formCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
@@ -1568,28 +1636,28 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
     borderWidth: 1,
-    borderColor: '#F0F0F5',
+    borderColor: '#334155',
   },
   input: {
     borderWidth: 1.5,
-    borderColor: '#E0E0E5',
+    borderColor: '#334155',
     padding: 13,
     marginVertical: 6,
     borderRadius: 12,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#1e293b',
     fontSize: 15,
     fontWeight: '500',
-    color: '#333',
+    color: '#f1f5f9',
   },
   textArea: {
     borderWidth: 1.5,
-    borderColor: '#E0E0E5',
+    borderColor: '#334155',
     padding: 13,
     borderRadius: 12,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#1e293b',
     fontSize: 15,
     fontWeight: '500',
-    color: '#333',
+    color: '#f1f5f9',
     minHeight: 120,
   },
   searchContainer: {
@@ -1604,16 +1672,16 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     borderWidth: 1.5,
-    borderColor: '#007AFF',
+    borderColor: '#6366f1',
     padding: 13,
     paddingLeft: 40,
     paddingRight: 40,
     borderRadius: 12,
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     fontSize: 15,
-    color: '#333',
+    color: '#f1f5f9',
     flex: 1,
-    shadowColor: '#007AFF',
+    shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -1625,7 +1693,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   searchResultsContainer: {
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderRadius: 10,
     marginTop: 8,
     maxHeight: 200,
@@ -1652,11 +1720,11 @@ const styles = StyleSheet.create({
   searchResultName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#f1f5f9',
   },
   searchResultDetail: {
     fontSize: 12,
-    color: '#999',
+    color: '#94a3b8',
     marginTop: 2,
   },
   noResultsContainer: {
@@ -1666,14 +1734,14 @@ const styles = StyleSheet.create({
   },
   noResultsText: {
     textAlign: 'center',
-    color: '#999',
+    color: '#94a3b8',
     fontSize: 13,
   },
   addNewItemButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#E8F4FD',
+    backgroundColor: 'rgba(99,102,241,0.1)',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
@@ -1682,22 +1750,22 @@ const styles = StyleSheet.create({
   addNewItemText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#007AFF',
+    color: '#6366f1',
   },
   quickIngInput: {
-    backgroundColor: '#F8F8F8',
+    backgroundColor: '#1e293b',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: '#334155',
     borderRadius: 10,
     padding: 12,
     fontSize: 15,
-    color: '#333',
+    color: '#f1f5f9',
     marginBottom: 8,
   },
   quickIngUnitLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#666',
+    color: '#94a3b8',
     marginBottom: 6,
     marginTop: 4,
   },
@@ -1705,18 +1773,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#F0F0F5',
+    backgroundColor: '#0f172a',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: '#334155',
   },
   quickIngUnitChipActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    backgroundColor: '#6366f1',
+    borderColor: '#6366f1',
   },
   quickIngUnitChipText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#666',
+    color: '#94a3b8',
   },
   quickIngUnitChipTextActive: {
     color: '#fff',
@@ -1727,7 +1795,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366f1',
     borderRadius: 10,
     paddingVertical: 12,
   },
@@ -1740,14 +1808,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#F0F0F5',
+    backgroundColor: '#0f172a',
     justifyContent: 'center',
     alignItems: 'center',
   },
   quickIngCancelBtnText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#666',
+    color: '#94a3b8',
   },
   typeBadge: {
     paddingHorizontal: 10,
@@ -1762,34 +1830,34 @@ const styles = StyleSheet.create({
   typeBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: 'white',
+    color: '#f1f5f9',
     letterSpacing: 0.3,
   },
   typeBadgeSmallText: {
     fontSize: 10,
     fontWeight: '700',
-    color: 'white',
+    color: '#f1f5f9',
   },
   badgeIngredient: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#22c55e',
   },
   badgeRecipe: {
-    backgroundColor: '#FF9800',
+    backgroundColor: '#f59e0b',
   },
   recipeItemCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderRadius: 14,
     padding: 14,
     marginBottom: 10,
     borderLeftWidth: 4,
-    borderLeftColor: '#007AFF',
+    borderLeftColor: '#6366f1',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 4,
     borderWidth: 1,
-    borderColor: '#F0F0F5',
+    borderColor: '#334155',
   },
   recipeItemHeader: {
     flexDirection: 'row',
@@ -1800,7 +1868,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#f1f5f9',
   },
   recipeItemBody: {
     flexDirection: 'row',
@@ -1811,7 +1879,7 @@ const styles = StyleSheet.create({
   amountButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E3F2FD',
+    backgroundColor: 'rgba(99,102,241,0.15)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
@@ -1819,39 +1887,39 @@ const styles = StyleSheet.create({
   },
   amountText: {
     fontSize: 13,
-    color: '#007AFF',
+    color: '#6366f1',
     fontWeight: '500',
   },
   itemCostText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#007AFF',
+    color: '#6366f1',
   },
   emptyState: {
     paddingVertical: 40,
     paddingHorizontal: 24,
     alignItems: 'center',
-    backgroundColor: '#F9F9FB',
+    backgroundColor: '#1e293b',
     borderRadius: 16,
     marginVertical: 10,
     borderWidth: 1.5,
-    borderColor: '#E8E8ED',
+    borderColor: '#334155',
     borderStyle: 'dashed',
   },
   emptyStateText: {
     fontSize: 16,
-    color: '#888',
+    color: '#94a3b8',
     fontWeight: '600',
     marginTop: 8,
   },
   emptyStateSubtext: {
     fontSize: 13,
-    color: '#bbb',
+    color: '#94a3b8',
     marginTop: 4,
     textAlign: 'center',
   },
   calcCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderRadius: 16,
     padding: 18,
     shadowColor: '#000',
@@ -1860,7 +1928,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
     borderWidth: 1,
-    borderColor: '#F0F0F5',
+    borderColor: '#334155',
   },
   calcRow: {
     flexDirection: 'row',
@@ -1870,28 +1938,28 @@ const styles = StyleSheet.create({
   },
   calcLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#94a3b8',
   },
   calcValue: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#333',
+    color: '#f1f5f9',
   },
   calcValueBig: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#6366f1',
   },
   calcSectionLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#333',
+    color: '#f1f5f9',
     marginTop: 4,
     marginBottom: 8,
   },
   divider: {
     height: 1,
-    backgroundColor: '#E8E8ED',
+    backgroundColor: '#1e293b',
     marginVertical: 10,
   },
   markupRow: {
@@ -1902,7 +1970,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   markupButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366f1',
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -1911,27 +1979,27 @@ const styles = StyleSheet.create({
   },
   markupInput: {
     borderWidth: 1.5,
-    borderColor: '#007AFF',
+    borderColor: '#6366f1',
     padding: 8,
     borderRadius: 8,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#0f172a',
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#f1f5f9',
     textAlign: 'center',
     width: 80,
   },
   percentSign: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#f1f5f9',
   },
   buttonPrimary: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366f1',
     padding: 15,
     borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#007AFF',
+    shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
@@ -1939,20 +2007,20 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   buttonSecondary: {
-    backgroundColor: '#F5F5F8',
+    backgroundColor: '#1e293b',
     padding: 15,
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#E0E0E5',
+    borderColor: '#334155',
   },
   buttonText: {
-    color: 'white',
+    color: '#f1f5f9',
     fontSize: 15,
     fontWeight: '600',
   },
   buttonSecondaryText: {
-    color: '#666',
+    color: '#94a3b8',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -1967,23 +2035,23 @@ const styles = StyleSheet.create({
   savedSearchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginBottom: 12,
     gap: 8,
     borderWidth: 1,
-    borderColor: '#E8E8ED',
+    borderColor: '#334155',
   },
   savedSearchInput: {
     flex: 1,
     fontSize: 14,
-    color: '#333',
+    color: '#f1f5f9',
     paddingVertical: 4,
   },
   savedRecipeCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
@@ -1993,7 +2061,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
     borderWidth: 1,
-    borderColor: '#F0F0F5',
+    borderColor: '#334155',
   },
   savedRecipeHeader: {
     flexDirection: 'row',
@@ -2004,7 +2072,7 @@ const styles = StyleSheet.create({
   savedRecipeName: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: '#f1f5f9',
     flex: 1,
   },
   savedRecipeActions: {
@@ -2012,18 +2080,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   actionButton: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: 'rgba(99,102,241,0.15)',
     padding: 8,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#2196F3',
+    borderColor: '#6366f1',
   },
   actionButtonDanger: {
-    backgroundColor: '#FFEBEE',
+    backgroundColor: 'rgba(239,68,68,0.1)',
     padding: 8,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#f44336',
+    borderColor: '#ef4444',
   },
   savedRecipeItems: {
     gap: 4,
@@ -2031,7 +2099,7 @@ const styles = StyleSheet.create({
   },
   savedItemText: {
     fontSize: 12,
-    color: '#666',
+    color: '#94a3b8',
   },
   savedRecipeFooter: {
     flexDirection: 'row',
@@ -2042,12 +2110,12 @@ const styles = StyleSheet.create({
   },
   savedCostText: {
     fontSize: 13,
-    color: '#999',
+    color: '#94a3b8',
     fontWeight: '500',
   },
   savedPriceText: {
     fontSize: 13,
-    color: '#007AFF',
+    color: '#6366f1',
     fontWeight: '600',
   },
   savedRecipeBadge: {
@@ -2066,7 +2134,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
@@ -2082,13 +2150,13 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#0f172a',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalCloseText: {
     fontSize: 18,
-    color: '#666',
+    color: '#94a3b8',
     fontWeight: '700',
   },
   modalTitle: {
@@ -2096,11 +2164,11 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 8,
     textAlign: 'center',
-    color: '#1A1A1A',
+    color: '#f1f5f9',
   },
   modalSubtitle: {
     fontSize: 14,
-    color: '#666',
+    color: '#94a3b8',
     textAlign: 'center',
     marginBottom: 12,
   },
@@ -2113,14 +2181,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#EBF5FF',
+    backgroundColor: 'rgba(99,102,241,0.1)',
     borderRadius: 8,
     padding: 10,
     marginBottom: 12,
   },
   ingredientInfoText: {
     fontSize: 13,
-    color: '#007AFF',
+    color: '#6366f1',
     fontWeight: '500',
   },
   unitSelectorSection: {
@@ -2135,7 +2203,7 @@ const styles = StyleSheet.create({
   unitCategoryLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#555',
+    color: '#94a3b8',
   },
   unitSelectorRow: {
     flexDirection: 'row',
@@ -2146,21 +2214,21 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#E8E8ED',
-    backgroundColor: '#F8F8FA',
+    borderColor: '#334155',
+    backgroundColor: '#0f172a',
     alignItems: 'center',
   },
   unitSelectChipActive: {
-    borderColor: '#007AFF',
-    backgroundColor: '#007AFF',
+    borderColor: '#6366f1',
+    backgroundColor: '#6366f1',
   },
   unitSelectChipText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#666',
+    color: '#94a3b8',
   },
   unitSelectChipTextActive: {
-    color: 'white',
+    color: '#f1f5f9',
   },
   amountInputRow: {
     flexDirection: 'row',
@@ -2168,13 +2236,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   amountUnitBadge: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366f1',
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 8,
   },
   amountUnitBadgeText: {
-    color: 'white',
+    color: '#f1f5f9',
     fontSize: 15,
     fontWeight: '700',
   },
@@ -2182,22 +2250,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F0FFF4',
+    backgroundColor: 'rgba(34,197,94,0.1)',
     borderRadius: 8,
     padding: 12,
     marginTop: 10,
     borderWidth: 1,
-    borderColor: '#C8E6C9',
+    borderColor: 'rgba(34,197,94,0.25)',
   },
   costPreviewLabel: {
     fontSize: 13,
-    color: '#555',
+    color: '#94a3b8',
     fontWeight: '500',
   },
   costPreviewValue: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#4CAF50',
+    color: '#22c55e',
   },
   modeSelector: {
     flexDirection: 'row',
@@ -2213,12 +2281,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#E8E8ED',
-    backgroundColor: '#F8F8FA',
+    borderColor: '#334155',
+    backgroundColor: '#0f172a',
   },
   modeChipActive: {
-    borderColor: '#007AFF',
-    backgroundColor: '#007AFF',
+    borderColor: '#6366f1',
+    backgroundColor: '#6366f1',
   },
   modeChipDisabled: {
     opacity: 0.4,
@@ -2226,10 +2294,10 @@ const styles = StyleSheet.create({
   modeChipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: '#94a3b8',
   },
   modeChipTextActive: {
-    color: 'white',
+    color: '#f1f5f9',
   },
   modeHint: {
     fontSize: 12,
@@ -2247,10 +2315,10 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#1e293b',
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#E0E0E5',
+    borderColor: '#334155',
     paddingHorizontal: 12,
     gap: 8,
   },
@@ -2259,7 +2327,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     fontSize: 15,
     fontWeight: '500',
-    color: '#333',
+    color: '#f1f5f9',
   },
   yieldUnitRow: {
     flexDirection: 'row',
@@ -2270,20 +2338,20 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#E8E8ED',
-    backgroundColor: '#F8F8FA',
+    borderColor: '#334155',
+    backgroundColor: '#0f172a',
   },
   yieldUnitChipActive: {
-    borderColor: '#007AFF',
-    backgroundColor: '#007AFF',
+    borderColor: '#6366f1',
+    backgroundColor: '#6366f1',
   },
   yieldUnitChipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: '#94a3b8',
   },
   yieldUnitChipTextActive: {
-    color: 'white',
+    color: '#f1f5f9',
   },
 
   lossBadgeRow: {
@@ -2301,11 +2369,11 @@ const styles = StyleSheet.create({
   },
   portionSummary: {
     marginTop: 12,
-    backgroundColor: '#FFF8E1',
+    backgroundColor: 'rgba(245,158,11,0.1)',
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#FFE082',
+    borderColor: 'rgba(245,158,11,0.3)',
   },
   collapsibleHeader: {
     flexDirection: 'row',
@@ -2317,11 +2385,11 @@ const styles = StyleSheet.create({
   collapsibleTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: '#f1f5f9',
   },
   collapsibleHint: {
     fontSize: 12,
-    color: '#999',
+    color: '#94a3b8',
     marginTop: 1,
   },
   collapsibleContent: {
@@ -2332,25 +2400,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FFF8E1',
+    backgroundColor: 'rgba(245,158,11,0.1)',
     borderRadius: 8,
     padding: 10,
     marginTop: 8,
     borderWidth: 1,
-    borderColor: '#FFE082',
+    borderColor: 'rgba(245,158,11,0.3)',
   },
   warningBoxText: {
     flex: 1,
     fontSize: 13,
-    color: '#795548',
+    color: '#f59e0b',
     lineHeight: 18,
   },
   dishWeightBox: {
-    backgroundColor: '#F0F7FF',
+    backgroundColor: 'rgba(99,102,241,0.08)',
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#B3D4FC',
+    borderColor: 'rgba(99,102,241,0.3)',
   },
 
 });

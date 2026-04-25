@@ -311,24 +311,24 @@ export default function Home() {
       <View style={styles.navRow}>
         <Link href="/auth" asChild>
           <TouchableOpacity style={styles.navCard} activeOpacity={0.7}>
-            <View style={[styles.navIconWrap, { backgroundColor: '#EBF5FF' }]}>
-              <Ionicons name="person" size={20} color="#007AFF" />
+            <View style={[styles.navIconWrap, { backgroundColor: '#1e293b' }]}>
+              <Ionicons name="person" size={20} color="#6366f1" />
             </View>
             <Text style={styles.navText}>Conta</Text>
           </TouchableOpacity>
         </Link>
         <Link href="/ingredients" asChild>
           <TouchableOpacity style={styles.navCard} activeOpacity={0.7}>
-            <View style={[styles.navIconWrap, { backgroundColor: '#E8F5E9' }]}>
-              <Ionicons name="leaf" size={20} color="#4CAF50" />
+            <View style={[styles.navIconWrap, { backgroundColor: '#1e293b' }]}>
+              <Ionicons name="leaf" size={20} color="#22c55e" />
             </View>
             <Text style={styles.navText}>Ingredientes</Text>
           </TouchableOpacity>
         </Link>
         <Link href="/recipes" asChild>
           <TouchableOpacity style={styles.navCard} activeOpacity={0.7}>
-            <View style={[styles.navIconWrap, { backgroundColor: '#FFF3E0' }]}>
-              <Ionicons name="restaurant" size={20} color="#FF9800" />
+            <View style={[styles.navIconWrap, { backgroundColor: '#1e293b' }]}>
+              <Ionicons name="restaurant" size={20} color="#f59e0b" />
             </View>
             <Text style={styles.navText}>Receitas</Text>
           </TouchableOpacity>
@@ -339,17 +339,17 @@ export default function Home() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>📖 Cardápio</Text>
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#007AFF" style={styles.searchIcon} />
+          <Ionicons name="search" size={20} color="#6366f1" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Buscar no cardápio..."
-            placeholderTextColor="#999"
+            placeholderTextColor="#94a3b8"
             value={searchText}
             onChangeText={setSearchText}
           />
           {searchText !== '' && (
             <TouchableOpacity style={styles.clearButton} onPress={() => setSearchText('')}>
-              <Ionicons name="close-circle" size={20} color="#999" />
+              <Ionicons name="close-circle" size={20} color="#94a3b8" />
             </TouchableOpacity>
           )}
         </View>
@@ -359,14 +359,14 @@ export default function Home() {
           style={[styles.filterButton, selectedCategory !== 'Todos' && styles.filterButtonActive]}
           onPress={() => setShowCategoryFilter(!showCategoryFilter)}
         >
-          <Ionicons name="filter" size={18} color={selectedCategory !== 'Todos' ? 'white' : '#007AFF'} />
+          <Ionicons name="filter" size={18} color={selectedCategory !== 'Todos' ? 'white' : '#6366f1'} />
           <Text style={[styles.filterButtonText, selectedCategory !== 'Todos' && styles.filterButtonTextActive]}>
             {selectedCategory === 'Todos' ? 'Filtrar por categoria' : selectedCategory}
           </Text>
           <Ionicons
             name={showCategoryFilter ? 'chevron-up' : 'chevron-down'}
             size={18}
-            color={selectedCategory !== 'Todos' ? 'white' : '#007AFF'}
+            color={selectedCategory !== 'Todos' ? 'white' : '#6366f1'}
           />
           {selectedCategory !== 'Todos' && (
             <TouchableOpacity
@@ -395,7 +395,7 @@ export default function Home() {
                 <Ionicons
                   name={cat === 'Todos' ? 'grid-outline' : 'pricetag-outline'}
                   size={16}
-                  color={selectedCategory === cat ? 'white' : '#555'}
+                  color={selectedCategory === cat ? 'white' : '#94a3b8'}
                 />
                 <Text style={[
                   styles.categoryOptionText,
@@ -423,12 +423,12 @@ export default function Home() {
         style={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#007AFF']} tintColor="#007AFF" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#6366f1']} tintColor="#6366f1" />
         }
       >
         {filteredRecipes.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="book-outline" size={56} color="#ccc" />
+            <Ionicons name="book-outline" size={56} color="#334155" />
             <Text style={styles.emptyText}>
               {searchText ? 'Nenhum prato encontrado' : 'Nenhuma receita no cardápio'}
             </Text>
@@ -489,7 +489,7 @@ export default function Home() {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <TouchableOpacity style={styles.modalClose} onPress={() => setShowDetail(false)} activeOpacity={0.7}>
-              <Ionicons name="close" size={20} color="#666" />
+              <Ionicons name="close" size={20} color="#94a3b8" />
             </TouchableOpacity>
 
             {selectedRecipe && (() => {
@@ -564,10 +564,10 @@ export default function Home() {
                         <View style={styles.calcCard}>
                           <View style={styles.calcRow}>
                             <View style={{flexDirection: 'row', alignItems: 'center', gap: 6}}>
-                              <Ionicons name="scale-outline" size={16} color="#007AFF" />
+                              <Ionicons name="scale-outline" size={16} color="#6366f1" />
                               <Text style={styles.calcLabel}>Peso do Prato (após preparo)</Text>
                             </View>
-                            <Text style={[styles.calcValue, {color: '#007AFF', fontWeight: '700'}]}>
+                            <Text style={[styles.calcValue, {color: '#6366f1', fontWeight: '700'}]}>
                               {selectedRecipe.total_weight} {selectedRecipe.total_weight_unit || 'g'}
                             </Text>
                           </View>
@@ -581,7 +581,7 @@ export default function Home() {
                   <View style={styles.calcCard}>
                     <View style={styles.calcRow}>
                       <Text style={styles.calcLabel}>Custo Total</Text>
-                      <Text style={[styles.calcValueBig, !hasPricing && { color: '#007AFF' }]}>{formatCurrency(totalCost)}</Text>
+                      <Text style={[styles.calcValueBig, !hasPricing && { color: '#6366f1' }]}>{formatCurrency(totalCost)}</Text>
                     </View>
                     {hasPricing && (
                       <>
@@ -635,16 +635,16 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#0f172a',
   },
   header: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0f172a',
     paddingTop: 54,
     paddingHorizontal: 20,
     paddingBottom: 22,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-    shadowColor: '#007AFF',
+    shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -664,7 +664,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(99,102,241,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -679,12 +679,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 26,
     fontWeight: '800',
-    color: 'white',
+    color: '#f1f5f9',
     letterSpacing: 0.5,
   },
   headerSubtitle: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.85)',
+    color: '#94a3b8',
     marginTop: 2,
   },
   navRow: {
@@ -695,18 +695,18 @@ const styles = StyleSheet.create({
   },
   navCard: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderRadius: 16,
     padding: 14,
     alignItems: 'center',
     gap: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 4,
     borderWidth: 1,
-    borderColor: '#F0F0F5',
+    borderColor: '#334155',
   },
   navIconWrap: {
     width: 40,
@@ -718,7 +718,7 @@ const styles = StyleSheet.create({
   navText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#333',
+    color: '#f1f5f9',
     letterSpacing: 0.2,
   },
   section: {
@@ -728,7 +728,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#333',
+    color: '#f1f5f9',
     marginBottom: 12,
   },
   searchContainer: {
@@ -743,16 +743,16 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     borderWidth: 1.5,
-    borderColor: '#007AFF',
+    borderColor: '#6366f1',
     padding: 13,
     paddingLeft: 40,
     paddingRight: 40,
     borderRadius: 12,
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     fontSize: 15,
-    color: '#333',
+    color: '#f1f5f9',
     flex: 1,
-    shadowColor: '#007AFF',
+    shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -767,22 +767,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 10,
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 11,
     borderWidth: 1.5,
-    borderColor: '#007AFF',
+    borderColor: '#6366f1',
     gap: 8,
   },
   filterButtonActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    backgroundColor: '#6366f1',
+    borderColor: '#6366f1',
   },
   filterButtonText: {
     flex: 1,
     fontSize: 14,
-    color: '#007AFF',
+    color: '#6366f1',
     fontWeight: '600',
   },
   filterButtonTextActive: {
@@ -796,14 +796,14 @@ const styles = StyleSheet.create({
   },
   categoryDropdown: {
     marginTop: 8,
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E8E8ED',
+    borderColor: '#334155',
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 5,
   },
@@ -814,15 +814,15 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     gap: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F7',
+    borderBottomColor: '#334155',
   },
   categoryOptionActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366f1',
   },
   categoryOptionText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
+    color: '#f1f5f9',
   },
   categoryOptionTextActive: {
     color: 'white',
@@ -833,40 +833,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: '#E8E8ED',
+    backgroundColor: '#1e293b',
     marginTop: 10,
     alignItems: 'center',
   },
   tableHeaderText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#666',
+    color: '#94a3b8',
     textTransform: 'uppercase',
   },
   tableRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8E8ED',
+    borderBottomColor: '#334155',
   },
   tableRowName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#333',
+    color: '#f1f5f9',
   },
   tableRowCategory: {
     fontSize: 11,
-    color: '#999',
+    color: '#94a3b8',
     marginTop: 2,
   },
   tableRowItems: {
     width: 70,
     textAlign: 'center',
     fontSize: 14,
-    color: '#666',
+    color: '#94a3b8',
     fontWeight: '500',
   },
   tableRowPriceCol: {
@@ -876,11 +876,11 @@ const styles = StyleSheet.create({
   tableRowPrice: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#6366f1',
   },
   tableRowCost: {
     fontSize: 11,
-    color: '#999',
+    color: '#94a3b8',
     marginTop: 2,
   },
   scrollContent: {
@@ -890,23 +890,23 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     paddingHorizontal: 24,
     alignItems: 'center',
-    backgroundColor: '#F9F9FB',
+    backgroundColor: '#1e293b',
     borderRadius: 16,
     marginHorizontal: 16,
     marginVertical: 20,
     borderWidth: 1.5,
-    borderColor: '#E8E8ED',
+    borderColor: '#334155',
     borderStyle: 'dashed',
   },
   emptyText: {
     fontSize: 16,
-    color: '#888',
+    color: '#94a3b8',
     fontWeight: '600',
     marginTop: 12,
   },
   emptySubtext: {
     fontSize: 13,
-    color: '#bbb',
+    color: '#94a3b8',
     marginTop: 6,
     textAlign: 'center',
     lineHeight: 18,
@@ -915,10 +915,10 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
@@ -926,7 +926,7 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 10,
   },
@@ -935,14 +935,14 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#334155',
     justifyContent: 'center',
     alignItems: 'center',
   },
   detailTitle: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#1A1A1A',
+    color: '#f1f5f9',
     textAlign: 'center',
     marginBottom: 20,
     marginTop: 4,
@@ -950,20 +950,20 @@ const styles = StyleSheet.create({
   detailSectionTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#333',
+    color: '#f1f5f9',
     marginTop: 16,
     marginBottom: 10,
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9F9FB',
+    backgroundColor: '#0f172a',
     borderRadius: 10,
     padding: 12,
     marginBottom: 8,
     gap: 8,
     borderWidth: 1,
-    borderColor: '#F0F0F5',
+    borderColor: '#334155',
   },
   detailBadge: {
     paddingHorizontal: 6,
@@ -976,49 +976,49 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   badgeIng: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#22c55e',
   },
   badgeRec: {
-    backgroundColor: '#FF9800',
+    backgroundColor: '#f59e0b',
   },
   detailItemName: {
     flex: 1,
     fontSize: 13,
     fontWeight: '500',
-    color: '#333',
+    color: '#f1f5f9',
   },
   detailItemQty: {
     fontSize: 12,
-    color: '#666',
+    color: '#94a3b8',
   },
   detailItemCost: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#007AFF',
+    color: '#6366f1',
     minWidth: 70,
     textAlign: 'right',
   },
   instructionsCard: {
-    backgroundColor: '#FFF8E1',
+    backgroundColor: '#0f172a',
     borderRadius: 10,
     padding: 14,
     borderLeftWidth: 4,
-    borderLeftColor: '#FF9800',
+    borderLeftColor: '#f59e0b',
   },
   instructionsText: {
     fontSize: 13,
-    color: '#555',
+    color: '#94a3b8',
     lineHeight: 20,
   },
   calcCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#0f172a',
     borderRadius: 14,
     padding: 18,
     borderWidth: 1,
-    borderColor: '#E8E8ED',
+    borderColor: '#334155',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 2,
   },
@@ -1030,21 +1030,21 @@ const styles = StyleSheet.create({
   },
   calcLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#94a3b8',
   },
   calcValue: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#333',
+    color: '#f1f5f9',
   },
   calcValueBig: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#6366f1',
   },
   divider: {
     height: 1,
-    backgroundColor: '#F0F0F5',
+    backgroundColor: '#334155',
     marginVertical: 2,
   },
   pdfButton: {
@@ -1052,19 +1052,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366f1',
     paddingVertical: 15,
     borderRadius: 14,
     marginTop: 24,
     marginBottom: 12,
-    shadowColor: '#007AFF',
+    shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
   },
   pdfButtonText: {
-    color: '#fff',
+    color: '#f1f5f9',
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.3,
@@ -1076,7 +1076,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#22c55e',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 25,

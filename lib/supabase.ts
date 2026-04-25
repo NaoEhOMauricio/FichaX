@@ -12,3 +12,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
   },
 });
+
+// Limpa sessão automaticamente quando o refresh token expira
+supabase.auth.onAuthStateChange((event) => {
+  if (event === 'TOKEN_REFRESHED') return;
+  if (event === 'SIGNED_OUT') {
+    AsyncStorage.removeItem('supabase.auth.token').catch(() => {});
+  }
+});

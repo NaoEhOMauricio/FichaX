@@ -120,9 +120,17 @@ export default function Ingredients() {
       return;
     }
 
+    const duplicate = ingredients.some(
+      ing => ing.name.trim().toLowerCase() === name.trim().toLowerCase()
+    );
+    if (duplicate) {
+      Alert.alert('Nome duplicado', 'Já existe um ingrediente com esse nome.');
+      return;
+    }
+
     setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
-    const { error } = await supabase.from('ingredients').insert([{ 
+    const { error } = await supabase.from('ingredients').insert([{
       name, 
       cost: newCost, 
       package_weight: newWeight, 
@@ -164,6 +172,14 @@ export default function Ingredients() {
     const newWeight = parseFloat(packageWeight);
     if (!name || isNaN(newCost) || isNaN(newWeight) || newWeight <= 0) {
       Alert.alert('Erro', 'Digite nome, custo e peso válidos.');
+      return;
+    }
+
+    const duplicate = ingredients.some(
+      ing => ing.id !== editingId && ing.name.trim().toLowerCase() === name.trim().toLowerCase()
+    );
+    if (duplicate) {
+      Alert.alert('Nome duplicado', 'Já existe um ingrediente com esse nome.');
       return;
     }
 
@@ -234,11 +250,11 @@ export default function Ingredients() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>🔍 Procurar Ingredientes</Text>
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#007AFF" style={styles.searchIcon} />
+          <Ionicons name="search" size={20} color="#6366f1" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Digite o nome para procurar..."
-            placeholderTextColor="#999"
+            placeholderTextColor="#94a3b8"
             value={searchText}
             onChangeText={setSearchText}
           />
@@ -247,7 +263,7 @@ export default function Ingredients() {
               style={styles.clearButton}
               onPress={() => setSearchText('')}
             >
-              <Ionicons name="close-circle" size={20} color="#999" />
+              <Ionicons name="close-circle" size={20} color="#94a3b8" />
             </TouchableOpacity>
           )}
         </View>
@@ -292,13 +308,13 @@ export default function Ingredients() {
                         style={styles.buttonEdit}
                         onPress={() => openEditModal(item)}
                       >
-                        <Ionicons name="pencil" size={16} color="#2196F3" />
+                        <Ionicons name="pencil" size={16} color="#6366f1" />
                       </TouchableOpacity>
                       <TouchableOpacity 
                         style={styles.buttonDelete}
                         onPress={() => deleteIngredient(item.id)}
                       >
-                        <Ionicons name="trash" size={16} color="#f44336" />
+                        <Ionicons name="trash" size={16} color="#ef4444" />
                       </TouchableOpacity>
                     </View>
                   </TouchableOpacity>
@@ -330,7 +346,7 @@ export default function Ingredients() {
             <TextInput
               style={styles.input}
               placeholder="Nome do ingrediente"
-              placeholderTextColor="#999"
+              placeholderTextColor="#94a3b8"
               value={name}
               onChangeText={setName}
               editable={!loading}
@@ -339,7 +355,7 @@ export default function Ingredients() {
               <TextInput
                 style={[styles.input, { flex: 1 }]}
                 placeholder="Custo (R$)"
-                placeholderTextColor="#999"
+                placeholderTextColor="#94a3b8"
                 value={cost}
                 onChangeText={setCost}
                 keyboardType="decimal-pad"
@@ -348,7 +364,7 @@ export default function Ingredients() {
               <TextInput
                 style={[styles.input, { flex: 1, marginLeft: 8 }]}
                 placeholder="Quantidade"
-                placeholderTextColor="#999"
+                placeholderTextColor="#94a3b8"
                 value={packageWeight}
                 onChangeText={setPackageWeight}
                 keyboardType="decimal-pad"
@@ -360,7 +376,7 @@ export default function Ingredients() {
               {UNIT_GROUPS.map(group => (
                 <View key={group.category} style={styles.unitGroup}>
                   <View style={styles.unitGroupHeader}>
-                    <Ionicons name={group.icon as any} size={14} color="#999" />
+                    <Ionicons name={group.icon as any} size={14} color="#94a3b8" />
                     <Text style={styles.unitGroupLabel}>{group.label}</Text>
                   </View>
                   <View style={styles.unitChipRow}>
@@ -419,7 +435,7 @@ export default function Ingredients() {
             <TextInput
               style={styles.input}
               placeholder="Nome do ingrediente"
-              placeholderTextColor="#999"
+              placeholderTextColor="#94a3b8"
               value={name}
               onChangeText={setName}
               editable={!loading}
@@ -428,7 +444,7 @@ export default function Ingredients() {
               <TextInput
                 style={[styles.input, { flex: 1 }]}
                 placeholder="Custo (R$)"
-                placeholderTextColor="#999"
+                placeholderTextColor="#94a3b8"
                 value={cost}
                 onChangeText={setCost}
                 keyboardType="decimal-pad"
@@ -437,7 +453,7 @@ export default function Ingredients() {
               <TextInput
                 style={[styles.input, { flex: 1, marginLeft: 8 }]}
                 placeholder="Quantidade"
-                placeholderTextColor="#999"
+                placeholderTextColor="#94a3b8"
                 value={packageWeight}
                 onChangeText={setPackageWeight}
                 keyboardType="decimal-pad"
@@ -449,7 +465,7 @@ export default function Ingredients() {
               {UNIT_GROUPS.map(group => (
                 <View key={group.category} style={styles.unitGroup}>
                   <View style={styles.unitGroupHeader}>
-                    <Ionicons name={group.icon as any} size={14} color="#999" />
+                    <Ionicons name={group.icon as any} size={14} color="#94a3b8" />
                     <Text style={styles.unitGroupLabel}>{group.label}</Text>
                   </View>
                   <View style={styles.unitChipRow}>
@@ -498,20 +514,20 @@ export default function Ingredients() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#0f172a',
   },
   backButton: {
     marginBottom: 8,
     alignSelf: 'flex-start',
   },
   header: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366f1',
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 20,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-    shadowColor: '#007AFF',
+    shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -520,13 +536,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: 'white',
+    color: '#f1f5f9',
     marginBottom: 4,
     letterSpacing: 0.3,
   },
   subtitle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.85)',
+    color: '#94a3b8',
   },
   scrollContent: {
     paddingHorizontal: 0,
@@ -539,7 +555,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#f1f5f9',
     marginBottom: 12,
   },
   listHeader: {
@@ -550,11 +566,11 @@ const styles = StyleSheet.create({
   },
   noResults: {
     fontSize: 12,
-    color: '#999',
+    color: '#94a3b8',
   },
   warningBanner: {
-    backgroundColor: '#FFF8E1',
-    borderColor: '#FFB300',
+    backgroundColor: 'rgba(245,158,11,0.1)',
+    borderColor: 'rgba(245,158,11,0.3)',
     borderWidth: 1,
     padding: 14,
     borderRadius: 12,
@@ -562,16 +578,16 @@ const styles = StyleSheet.create({
     marginTop: 15,
     marginBottom: 15,
     borderLeftWidth: 4,
-    borderLeftColor: '#FFB300',
+    borderLeftColor: '#f59e0b',
   },
   warningText: {
-    color: '#7B6B00',
+    color: '#f59e0b',
     fontWeight: '600',
     fontSize: 13,
     lineHeight: 18,
   },
   formCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
@@ -580,7 +596,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
     borderWidth: 1,
-    borderColor: '#F0F0F5',
+    borderColor: '#334155',
   },
   row: {
     flexDirection: 'row',
@@ -588,14 +604,14 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1.5,
-    borderColor: '#E0E0E5',
+    borderColor: '#334155',
     padding: 13,
     marginVertical: 6,
     borderRadius: 12,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#1e293b',
     fontSize: 15,
     fontWeight: '500',
-    color: '#333',
+    color: '#f1f5f9',
   },
   searchContainer: {
     position: 'relative',
@@ -609,17 +625,17 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     borderWidth: 1.5,
-    borderColor: '#007AFF',
+    borderColor: '#6366f1',
     padding: 13,
     paddingLeft: 40,
     paddingRight: 40,
     marginVertical: 0,
     borderRadius: 12,
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     fontSize: 15,
-    color: '#333',
+    color: '#f1f5f9',
     flex: 1,
-    shadowColor: '#007AFF',
+    shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -631,32 +647,32 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   buttonPrimary: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366f1',
     padding: 15,
     borderRadius: 12,
     marginTop: 10,
     alignItems: 'center',
-    shadowColor: '#007AFF',
+    shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 6,
   },
   buttonSecondary: {
-    backgroundColor: '#F5F5F8',
+    backgroundColor: '#1e293b',
     padding: 15,
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#E0E0E5',
+    borderColor: '#334155',
   },
   buttonText: {
-    color: 'white',
+    color: '#f1f5f9',
     fontSize: 15,
     fontWeight: '600',
   },
   buttonSecondaryText: {
-    color: '#666',
+    color: '#94a3b8',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -671,10 +687,10 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     marginHorizontal: 20,
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderRadius: 14,
     borderLeftWidth: 4,
-    borderLeftColor: '#007AFF',
+    borderLeftColor: '#6366f1',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -684,7 +700,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
     borderWidth: 1,
-    borderColor: '#F0F0F5',
+    borderColor: '#334155',
   },
   itemContent: {
     flex: 1,
@@ -694,7 +710,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
     marginBottom: 8,
-    color: '#1A1A1A',
+    color: '#f1f5f9',
   },
   itemDetails: {
     gap: 6,
@@ -705,18 +721,18 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 12,
-    color: '#999',
+    color: '#94a3b8',
     fontWeight: '500',
     width: 80,
   },
   detailValue: {
     fontSize: 12,
-    color: '#666',
+    color: '#94a3b8',
     flex: 1,
   },
   detailValueHighlight: {
     fontSize: 12,
-    color: '#007AFF',
+    color: '#6366f1',
     fontWeight: '600',
     flex: 1,
   },
@@ -725,44 +741,44 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   buttonEdit: {
-    backgroundColor: '#e3f2fd',
+    backgroundColor: 'rgba(99,102,241,0.15)',
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#2196F3',
+    borderColor: '#6366f1',
   },
   buttonDelete: {
-    backgroundColor: '#ffebee',
+    backgroundColor: 'rgba(239,68,68,0.1)',
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#f44336',
+    borderColor: '#ef4444',
   },
   emptyState: {
     paddingVertical: 40,
     paddingHorizontal: 24,
     alignItems: 'center',
-    backgroundColor: '#F9F9FB',
+    backgroundColor: '#1e293b',
     borderRadius: 16,
     marginHorizontal: 20,
     marginVertical: 10,
     borderWidth: 1.5,
-    borderColor: '#E8E8ED',
+    borderColor: '#334155',
     borderStyle: 'dashed',
   },
   emptyStateText: {
     fontSize: 16,
-    color: '#888',
+    color: '#94a3b8',
     fontWeight: '600',
     marginBottom: 6,
   },
   emptyStateSubtext: {
     fontSize: 13,
-    color: '#bbb',
+    color: '#94a3b8',
     textAlign: 'center',
   },
   modalContainer: {
@@ -771,7 +787,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
@@ -788,13 +804,13 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#0f172a',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalCloseText: {
     fontSize: 18,
-    color: '#666',
+    color: '#94a3b8',
     fontWeight: '700',
   },
   modalTitle: {
@@ -802,18 +818,18 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 16,
     textAlign: 'center',
-    color: '#1A1A1A',
+    color: '#f1f5f9',
   },
   modalButtons: {
     gap: 10,
     marginTop: 15,
   },
   toggleButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366f1',
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',
-    shadowColor: '#007AFF',
+    shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -825,7 +841,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   toggleButtonText: {
-    color: 'white',
+    color: '#f1f5f9',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -833,13 +849,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 24,
     right: 20,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366f1',
     width: 58,
     height: 58,
     borderRadius: 29,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#007AFF',
+    shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
@@ -872,7 +888,7 @@ const styles = StyleSheet.create({
   },
   unitGroupLabel: {
     fontSize: 11,
-    color: '#999',
+    color: '#94a3b8',
     fontWeight: '600',
     textTransform: 'uppercase',
   },
@@ -885,20 +901,20 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: '#E8E8ED',
-    backgroundColor: '#F8F8FA',
+    borderColor: '#334155',
+    backgroundColor: '#0f172a',
     alignItems: 'center',
   },
   unitChipActive: {
-    borderColor: '#007AFF',
-    backgroundColor: '#007AFF',
+    borderColor: '#6366f1',
+    backgroundColor: '#6366f1',
   },
   unitChipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: '#94a3b8',
   },
   unitChipTextActive: {
-    color: 'white',
+    color: '#f1f5f9',
   },
 });

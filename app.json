@@ -2,7 +2,7 @@
   "expo": {
     "name": "FichaX",
     "slug": "fichax",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

@@ -554,11 +554,11 @@ export default function Auth() {
           <View style={styles.formCard}>
             <Text style={styles.inputLabel}>E-mail</Text>
             <View style={styles.inputRow}>
-              <Ionicons name="mail-outline" size={20} color="#999" style={styles.inputIcon} />
+              <Ionicons name="mail-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
               <TextInput
                 style={styles.inputField}
                 placeholder="seu@email.com"
-                placeholderTextColor="#bbb"
+                placeholderTextColor="#94a3b8"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -569,18 +569,18 @@ export default function Auth() {
 
             <Text style={styles.inputLabel}>Senha</Text>
             <View style={styles.inputRow}>
-              <Ionicons name="lock-closed-outline" size={20} color="#999" style={styles.inputIcon} />
+              <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
               <TextInput
                 style={styles.inputField}
                 placeholder="Sua senha"
-                placeholderTextColor="#bbb"
+                placeholderTextColor="#94a3b8"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
                 editable={!loading}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="#999" />
+                <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="#94a3b8" />
               </TouchableOpacity>
             </View>
             {isSignUp && <PasswordStrengthBar value={password} />}
@@ -590,11 +590,11 @@ export default function Auth() {
               <>
                 <Text style={styles.inputLabel}>Confirmar senha</Text>
                 <View style={styles.inputRow}>
-                  <Ionicons name="lock-closed-outline" size={20} color="#999" style={styles.inputIcon} />
+                  <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
                   <TextInput
                     style={styles.inputField}
                     placeholder="Repita a senha"
-                    placeholderTextColor="#bbb"
+                    placeholderTextColor="#94a3b8"
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     secureTextEntry={!showPassword}
@@ -639,10 +639,10 @@ export default function Auth() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalCard}>
               <View style={styles.modalHeader}>
-                <Ionicons name="key-outline" size={28} color="#007AFF" />
+                <Ionicons name="key-outline" size={28} color="#6366f1" />
                 <Text style={styles.modalTitle}>Recuperar senha</Text>
                 <TouchableOpacity onPress={() => setShowResetPassword(false)} style={styles.modalCloseBtn}>
-                  <Ionicons name="close" size={24} color="#999" />
+                  <Ionicons name="close" size={24} color="#94a3b8" />
                 </TouchableOpacity>
               </View>
               <Text style={styles.modalDesc}>
@@ -650,11 +650,11 @@ export default function Auth() {
               </Text>
               <Text style={styles.inputLabel}>E-mail</Text>
               <View style={styles.inputRow}>
-                <Ionicons name="mail-outline" size={20} color="#999" style={styles.inputIcon} />
+                <Ionicons name="mail-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
                 <TextInput
                   style={styles.inputField}
                   placeholder="seu@email.com"
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor="#94a3b8"
                   value={resetEmail}
                   onChangeText={setResetEmail}
                   keyboardType="email-address"
@@ -685,7 +685,7 @@ export default function Auth() {
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView ref={scrollRef} contentContainerStyle={styles.authScroll} keyboardShouldPersistTaps="handled">
           <View style={styles.authHeader}>
-            <View style={[styles.authIconCircle, { backgroundColor: '#4CAF50' }]}>
+            <View style={[styles.authIconCircle, { backgroundColor: '#22c55e' }]}>
               <Ionicons name="person-add" size={36} color="white" />
             </View>
             <Text style={styles.authTitle}>Complete seu cadastro</Text>
@@ -697,11 +697,11 @@ export default function Auth() {
             <View onLayout={trackField('nome')}>
               <Text style={styles.inputLabel}>Nome completo *</Text>
               <View style={styles.inputRow}>
-                <Ionicons name="person-outline" size={20} color="#999" style={styles.inputIcon} />
+                <Ionicons name="person-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
                 <TextInput
                   style={styles.inputField}
                   placeholder="Seu nome completo"
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor="#94a3b8"
                   value={onboardName}
                   onChangeText={setOnboardName}
                   autoCapitalize="words"
@@ -715,11 +715,11 @@ export default function Auth() {
             <View onLayout={trackField('telefone')}>
               <Text style={styles.inputLabel}>Telefone *</Text>
               <View style={styles.inputRow}>
-                <Ionicons name="call-outline" size={20} color="#999" style={styles.inputIcon} />
+                <Ionicons name="call-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
                 <TextInput
                   style={styles.inputField}
                   placeholder="(00) 00000-0000"
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor="#94a3b8"
                   value={onboardPhone}
                   onChangeText={(t) => handlePhoneChange(t, setOnboardPhone)}
                   keyboardType="phone-pad"
@@ -731,7 +731,7 @@ export default function Auth() {
 
             {/* Endereço */}
             <View style={styles.onboardSectionHeader}>
-              <Ionicons name="location-outline" size={20} color="#007AFF" />
+              <Ionicons name="location-outline" size={20} color="#6366f1" />
               <Text style={styles.onboardSectionTitle}>Endereço</Text>
             </View>
 
@@ -739,11 +739,11 @@ export default function Auth() {
             <View onLayout={trackField('cep')}>
               <Text style={styles.inputLabel}>CEP *</Text>
               <View style={styles.inputRow}>
-                <Ionicons name="map-outline" size={20} color="#999" style={styles.inputIcon} />
+                <Ionicons name="map-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
                 <TextInput
                   style={styles.inputField}
                   placeholder="00000-000"
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor="#94a3b8"
                   value={onboardAddress.cep}
                   onChangeText={(t) => {
                     const formatted = formatCEP(t);
@@ -754,7 +754,7 @@ export default function Auth() {
                   maxLength={9}
                   onFocus={() => scrollToField('cep')}
                 />
-                {cepLoading && <ActivityIndicator size="small" color="#007AFF" />}
+                {cepLoading && <ActivityIndicator size="small" color="#6366f1" />}
               </View>
             </View>
 
@@ -762,11 +762,11 @@ export default function Auth() {
             <View onLayout={trackField('rua')}>
               <Text style={styles.inputLabel}>Rua / Logradouro *</Text>
               <View style={styles.inputRow}>
-                <Ionicons name="navigate-outline" size={20} color="#999" style={styles.inputIcon} />
+                <Ionicons name="navigate-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
                 <TextInput
                   style={styles.inputField}
                   placeholder="Ex: Rua das Flores"
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor="#94a3b8"
                   value={onboardAddress.rua}
                   onChangeText={(t) => setOnboardAddress(prev => ({ ...prev, rua: t }))}
                   returnKeyType="next"
@@ -783,7 +783,7 @@ export default function Auth() {
                   <TextInput
                     style={styles.inputField}
                     placeholder="123"
-                    placeholderTextColor="#bbb"
+                    placeholderTextColor="#94a3b8"
                     value={onboardAddress.numero}
                     onChangeText={(t) => setOnboardAddress(prev => ({ ...prev, numero: t }))}
                     keyboardType="default"
@@ -798,7 +798,7 @@ export default function Auth() {
                   <TextInput
                     style={styles.inputField}
                     placeholder="Apto, Sala..."
-                    placeholderTextColor="#bbb"
+                    placeholderTextColor="#94a3b8"
                     value={onboardAddress.complemento}
                     onChangeText={(t) => setOnboardAddress(prev => ({ ...prev, complemento: t }))}
                     returnKeyType="next"
@@ -812,11 +812,11 @@ export default function Auth() {
             <View onLayout={trackField('bairro')}>
               <Text style={styles.inputLabel}>Bairro *</Text>
               <View style={styles.inputRow}>
-                <Ionicons name="business-outline" size={20} color="#999" style={styles.inputIcon} />
+                <Ionicons name="business-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
                 <TextInput
                   style={styles.inputField}
                   placeholder="Ex: Centro"
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor="#94a3b8"
                   value={onboardAddress.bairro}
                   onChangeText={(t) => setOnboardAddress(prev => ({ ...prev, bairro: t }))}
                   returnKeyType="next"
@@ -833,7 +833,7 @@ export default function Auth() {
                   <TextInput
                     style={styles.inputField}
                     placeholder="Ex: São Paulo"
-                    placeholderTextColor="#bbb"
+                    placeholderTextColor="#94a3b8"
                     value={onboardAddress.cidade}
                     onChangeText={(t) => setOnboardAddress(prev => ({ ...prev, cidade: t }))}
                     returnKeyType="next"
@@ -847,7 +847,7 @@ export default function Auth() {
                   <TextInput
                     style={styles.inputField}
                     placeholder="SP"
-                    placeholderTextColor="#bbb"
+                    placeholderTextColor="#94a3b8"
                     value={onboardAddress.estado}
                     onChangeText={(t) => setOnboardAddress(prev => ({ ...prev, estado: t.toUpperCase().slice(0, 2) }))}
                     maxLength={2}
@@ -860,7 +860,7 @@ export default function Auth() {
             </View>
 
             <TouchableOpacity
-              style={[styles.primaryBtn, loading && styles.primaryBtnDisabled, { backgroundColor: '#4CAF50' }]}
+              style={[styles.primaryBtn, loading && styles.primaryBtnDisabled, { backgroundColor: '#22c55e' }]}
               onPress={handleCompleteOnboarding}
               disabled={loading}
             >
@@ -928,7 +928,7 @@ export default function Auth() {
             style={[styles.tab, activeTab === tab.key && styles.tabActive]}
             onPress={() => setActiveTab(tab.key)}
           >
-            <Ionicons name={tab.icon as any} size={18} color={activeTab === tab.key ? '#007AFF' : '#999'} />
+            <Ionicons name={tab.icon as any} size={18} color={activeTab === tab.key ? '#6366f1' : '#94a3b8'} />
             <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>{tab.label}</Text>
           </TouchableOpacity>
         ))}
@@ -941,7 +941,7 @@ export default function Auth() {
             <Text style={styles.sectionTitle}>Informações pessoais</Text>
             <View style={styles.card}>
               <View style={styles.profileInfoRow}>
-                <Ionicons name="person-outline" size={20} color="#007AFF" />
+                <Ionicons name="person-outline" size={20} color="#6366f1" />
                 <View style={styles.profileInfoContent}>
                   <Text style={styles.profileInfoLabel}>Nome</Text>
                   <Text style={styles.profileInfoValue}>{displayName || 'Não informado'}</Text>
@@ -949,7 +949,7 @@ export default function Auth() {
               </View>
               <View style={styles.profileInfoDivider} />
               <View style={styles.profileInfoRow}>
-                <Ionicons name="call-outline" size={20} color="#007AFF" />
+                <Ionicons name="call-outline" size={20} color="#6366f1" />
                 <View style={styles.profileInfoContent}>
                   <Text style={styles.profileInfoLabel}>Telefone</Text>
                   <Text style={styles.profileInfoValue}>{phone || 'Não informado'}</Text>
@@ -957,7 +957,7 @@ export default function Auth() {
               </View>
               <View style={styles.profileInfoDivider} />
               <View style={styles.profileInfoRow}>
-                <Ionicons name="mail-outline" size={20} color="#007AFF" />
+                <Ionicons name="mail-outline" size={20} color="#6366f1" />
                 <View style={styles.profileInfoContent}>
                   <Text style={styles.profileInfoLabel}>E-mail</Text>
                   <Text style={styles.profileInfoValue}>{user.email}</Text>
@@ -967,7 +967,7 @@ export default function Auth() {
                 <>
                   <View style={styles.profileInfoDivider} />
                   <View style={styles.profileInfoRow}>
-                    <Ionicons name="location-outline" size={20} color="#007AFF" />
+                    <Ionicons name="location-outline" size={20} color="#6366f1" />
                     <View style={styles.profileInfoContent}>
                       <Text style={styles.profileInfoLabel}>Endereço</Text>
                       <Text style={styles.profileInfoValue}>
@@ -981,16 +981,26 @@ export default function Auth() {
                 </>
               ) : null}
               <TouchableOpacity style={styles.editProfileBtn} onPress={openEditProfile}>
-                <Ionicons name="create-outline" size={18} color="#007AFF" />
+                <Ionicons name="create-outline" size={18} color="#6366f1" />
                 <Text style={styles.editProfileBtnText}>Editar perfil</Text>
               </TouchableOpacity>
             </View>
+
+            {/* FluxoX */}
+            <Text style={[styles.sectionTitle, { marginTop: 24 }]}>FluxoX</Text>
+            <TouchableOpacity style={styles.fluxoxCard} onPress={() => router.push('/subscription')} activeOpacity={0.85}>
+              <View style={styles.fluxoxCardLeft}>
+                <Text style={styles.fluxoxCardTitle}>Gerenciar assinatura</Text>
+                <Text style={styles.fluxoxCardDesc}>Ative Mesas e Delivery no FluxoX</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#6366f1" />
+            </TouchableOpacity>
 
             {/* Mini histórico de atividades */}
             <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Atividade recente</Text>
             {activityLog.length === 0 ? (
               <View style={styles.emptyActivity}>
-                <Ionicons name="time-outline" size={36} color="#ddd" />
+                <Ionicons name="time-outline" size={36} color="#334155" />
                 <Text style={styles.emptyActivityText}>Nenhuma atividade ainda</Text>
                 <Text style={styles.emptyActivitySub}>Suas ações na conta aparecerão aqui</Text>
               </View>
@@ -1023,31 +1033,31 @@ export default function Auth() {
 
             {/* Alterar senha */}
             <TouchableOpacity style={styles.securityItem} onPress={() => setShowChangePassword(true)}>
-              <View style={[styles.secIconCircle, { backgroundColor: '#E3F2FD' }]}>
-                <Ionicons name="key-outline" size={22} color="#007AFF" />
+              <View style={[styles.secIconCircle, { backgroundColor: '#1e293b' }]}>
+                <Ionicons name="key-outline" size={22} color="#6366f1" />
               </View>
               <View style={styles.secItemContent}>
                 <Text style={styles.secItemTitle}>Alterar senha</Text>
                 <Text style={styles.secItemDesc}>Recomendamos alterar regularmente</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
+              <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
             </TouchableOpacity>
 
             {/* Alterar e-mail */}
             <TouchableOpacity style={styles.securityItem} onPress={() => setShowChangeEmail(true)}>
-              <View style={[styles.secIconCircle, { backgroundColor: '#FFF3E0' }]}>
-                <Ionicons name="mail-outline" size={22} color="#FF9800" />
+              <View style={[styles.secIconCircle, { backgroundColor: '#1e293b' }]}>
+                <Ionicons name="mail-outline" size={22} color="#f59e0b" />
               </View>
               <View style={styles.secItemContent}>
                 <Text style={styles.secItemTitle}>Alterar e-mail</Text>
                 <Text style={styles.secItemDesc}>Confirmação enviada por e-mail</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
+              <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
             </TouchableOpacity>
 
             {/* Verificação de e-mail */}
             <View style={styles.securityItem}>
-              <View style={[styles.secIconCircle, { backgroundColor: emailConfirmed ? '#E8F5E9' : '#FFF8E1' }]}>
+              <View style={[styles.secIconCircle, { backgroundColor: '#1e293b' }]}>
                 <Ionicons
                   name={emailConfirmed ? 'shield-checkmark' : 'shield-outline'}
                   size={22}
@@ -1090,7 +1100,7 @@ export default function Auth() {
             <Text style={styles.sectionTitle}>Informações da sessão</Text>
             <View style={styles.card}>
               <View style={styles.sessionRow}>
-                <Ionicons name="log-in-outline" size={20} color="#007AFF" />
+                <Ionicons name="log-in-outline" size={20} color="#6366f1" />
                 <Text style={styles.sessionLabel}>Último acesso</Text>
                 <Text style={styles.sessionValue}>
                   {lastSignIn ? lastSignIn.toLocaleString('pt-BR') : 'Indisponível'}
@@ -1098,7 +1108,7 @@ export default function Auth() {
               </View>
               <View style={styles.sessionDivider} />
               <View style={styles.sessionRow}>
-                <Ionicons name="calendar-outline" size={20} color="#007AFF" />
+                <Ionicons name="calendar-outline" size={20} color="#6366f1" />
                 <Text style={styles.sessionLabel}>Conta criada</Text>
                 <Text style={styles.sessionValue}>
                   {createdAt ? createdAt.toLocaleString('pt-BR') : 'Indisponível'}
@@ -1106,13 +1116,13 @@ export default function Auth() {
               </View>
               <View style={styles.sessionDivider} />
               <View style={styles.sessionRow}>
-                <Ionicons name="finger-print-outline" size={20} color="#007AFF" />
+                <Ionicons name="finger-print-outline" size={20} color="#6366f1" />
                 <Text style={styles.sessionLabel}>ID do usuário</Text>
                 <Text style={[styles.sessionValue, { fontSize: 11 }]}>{user.id?.slice(0, 16)}...</Text>
               </View>
               <View style={styles.sessionDivider} />
               <View style={styles.sessionRow}>
-                <Ionicons name="at-outline" size={20} color="#007AFF" />
+                <Ionicons name="at-outline" size={20} color="#6366f1" />
                 <Text style={styles.sessionLabel}>Provedor</Text>
                 <Text style={styles.sessionValue}>
                   {user.app_metadata?.provider === 'email' ? 'E-mail / Senha' : user.app_metadata?.provider || 'Desconhecido'}
@@ -1135,10 +1145,10 @@ export default function Auth() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <Ionicons name="key-outline" size={28} color="#007AFF" />
+              <Ionicons name="key-outline" size={28} color="#6366f1" />
               <Text style={styles.modalTitle}>Alterar senha</Text>
               <TouchableOpacity onPress={() => { setShowChangePassword(false); setCurrentPassword(''); setNewPassword(''); setConfirmNewPassword(''); }} style={styles.modalCloseBtn}>
-                <Ionicons name="close" size={24} color="#999" />
+                <Ionicons name="close" size={24} color="#94a3b8" />
               </TouchableOpacity>
             </View>
             <Text style={styles.modalDesc}>
@@ -1147,20 +1157,20 @@ export default function Auth() {
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.inputLabel}>Senha atual</Text>
               <View style={styles.inputRow}>
-                <Ionicons name="lock-closed-outline" size={20} color="#999" style={styles.inputIcon} />
-                <TextInput style={styles.inputField} placeholder="Senha atual" placeholderTextColor="#bbb" value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry />
+                <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+                <TextInput style={styles.inputField} placeholder="Senha atual" placeholderTextColor="#94a3b8" value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry />
               </View>
               <Text style={styles.inputLabel}>Nova senha</Text>
               <View style={styles.inputRow}>
-                <Ionicons name="lock-open-outline" size={20} color="#999" style={styles.inputIcon} />
-                <TextInput style={styles.inputField} placeholder="Nova senha" placeholderTextColor="#bbb" value={newPassword} onChangeText={setNewPassword} secureTextEntry />
+                <Ionicons name="lock-open-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+                <TextInput style={styles.inputField} placeholder="Nova senha" placeholderTextColor="#94a3b8" value={newPassword} onChangeText={setNewPassword} secureTextEntry />
               </View>
               <PasswordStrengthBar value={newPassword} />
               <PasswordRequirements value={newPassword} />
               <Text style={styles.inputLabel}>Confirmar nova senha</Text>
               <View style={styles.inputRow}>
-                <Ionicons name="lock-open-outline" size={20} color="#999" style={styles.inputIcon} />
-                <TextInput style={styles.inputField} placeholder="Repita a nova senha" placeholderTextColor="#bbb" value={confirmNewPassword} onChangeText={setConfirmNewPassword} secureTextEntry />
+                <Ionicons name="lock-open-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+                <TextInput style={styles.inputField} placeholder="Repita a nova senha" placeholderTextColor="#94a3b8" value={confirmNewPassword} onChangeText={setConfirmNewPassword} secureTextEntry />
               </View>
               {confirmNewPassword !== '' && newPassword !== confirmNewPassword && (
                 <Text style={styles.errorHint}>As senhas não coincidem</Text>
@@ -1184,10 +1194,10 @@ export default function Auth() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <Ionicons name="mail-outline" size={28} color="#FF9800" />
+              <Ionicons name="mail-outline" size={28} color="#f59e0b" />
               <Text style={styles.modalTitle}>Alterar e-mail</Text>
               <TouchableOpacity onPress={() => { setShowChangeEmail(false); setNewEmail(''); setEmailConfirmPassword(''); }} style={styles.modalCloseBtn}>
-                <Ionicons name="close" size={24} color="#999" />
+                <Ionicons name="close" size={24} color="#94a3b8" />
               </TouchableOpacity>
             </View>
             <Text style={styles.modalDesc}>
@@ -1200,12 +1210,12 @@ export default function Auth() {
             <Text style={styles.inputLabel}>Novo e-mail</Text>
             <View style={styles.inputRow}>
               <Ionicons name="mail-outline" size={20} color="#999" style={styles.inputIcon} />
-              <TextInput style={styles.inputField} placeholder="novo@email.com" placeholderTextColor="#bbb" value={newEmail} onChangeText={setNewEmail} keyboardType="email-address" autoCapitalize="none" />
+              <TextInput style={styles.inputField} placeholder="novo@email.com" placeholderTextColor="#94a3b8" value={newEmail} onChangeText={setNewEmail} keyboardType="email-address" autoCapitalize="none" />
             </View>
             <Text style={styles.inputLabel}>Confirme sua senha</Text>
             <View style={styles.inputRow}>
               <Ionicons name="lock-closed-outline" size={20} color="#999" style={styles.inputIcon} />
-              <TextInput style={styles.inputField} placeholder="Sua senha atual" placeholderTextColor="#bbb" value={emailConfirmPassword} onChangeText={setEmailConfirmPassword} secureTextEntry />
+              <TextInput style={styles.inputField} placeholder="Sua senha atual" placeholderTextColor="#94a3b8" value={emailConfirmPassword} onChangeText={setEmailConfirmPassword} secureTextEntry />
             </View>
             <TouchableOpacity
               style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
@@ -1225,10 +1235,10 @@ export default function Auth() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { maxHeight: '85%' }]}>
             <View style={styles.modalHeader}>
-              <Ionicons name="create-outline" size={28} color="#007AFF" />
+              <Ionicons name="create-outline" size={28} color="#6366f1" />
               <Text style={styles.modalTitle}>Editar perfil</Text>
               <TouchableOpacity onPress={() => setShowEditProfile(false)} style={styles.modalCloseBtn}>
-                <Ionicons name="close" size={24} color="#999" />
+                <Ionicons name="close" size={24} color="#94a3b8" />
               </TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -1237,22 +1247,22 @@ export default function Auth() {
               </Text>
               <Text style={styles.inputLabel}>Nome de exibição</Text>
               <View style={styles.inputRow}>
-                <Ionicons name="person-outline" size={20} color="#999" style={styles.inputIcon} />
+                <Ionicons name="person-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
                 <TextInput
                   style={styles.inputField}
                   placeholder="Seu nome completo"
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor="#94a3b8"
                   value={editName}
                   onChangeText={setEditName}
                 />
               </View>
               <Text style={styles.inputLabel}>Telefone (BR)</Text>
               <View style={styles.inputRow}>
-                <Ionicons name="call-outline" size={20} color="#999" style={styles.inputIcon} />
+                <Ionicons name="call-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
                 <TextInput
                   style={styles.inputField}
                   placeholder="(00) 00000-0000"
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor="#94a3b8"
                   value={editPhone}
                   onChangeText={(t) => handlePhoneChange(t, setEditPhone)}
                   keyboardType="phone-pad"
@@ -1261,17 +1271,17 @@ export default function Auth() {
               </View>
 
               <View style={styles.onboardSectionHeader}>
-                <Ionicons name="location-outline" size={20} color="#007AFF" />
+                <Ionicons name="location-outline" size={20} color="#6366f1" />
                 <Text style={styles.onboardSectionTitle}>Endereço</Text>
               </View>
 
               <Text style={styles.inputLabel}>CEP</Text>
               <View style={styles.inputRow}>
-                <Ionicons name="map-outline" size={20} color="#999" style={styles.inputIcon} />
+                <Ionicons name="map-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
                 <TextInput
                   style={styles.inputField}
                   placeholder="00000-000"
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor="#94a3b8"
                   value={editAddress.cep}
                   onChangeText={(t) => {
                     const formatted = formatCEP(t);
@@ -1281,7 +1291,7 @@ export default function Auth() {
                   keyboardType="number-pad"
                   maxLength={9}
                 />
-                {cepLoading && <ActivityIndicator size="small" color="#007AFF" />}
+                {cepLoading && <ActivityIndicator size="small" color="#6366f1" />}
               </View>
 
               <Text style={styles.inputLabel}>Rua / Logradouro</Text>
@@ -1289,7 +1299,7 @@ export default function Auth() {
                 <TextInput
                   style={styles.inputField}
                   placeholder="Ex: Rua das Flores"
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor="#94a3b8"
                   value={editAddress.rua}
                   onChangeText={(t) => setEditAddress(prev => ({ ...prev, rua: t }))}
                 />
@@ -1302,7 +1312,7 @@ export default function Auth() {
                     <TextInput
                       style={styles.inputField}
                       placeholder="123"
-                      placeholderTextColor="#bbb"
+                      placeholderTextColor="#94a3b8"
                       value={editAddress.numero}
                       onChangeText={(t) => setEditAddress(prev => ({ ...prev, numero: t }))}
                     />
@@ -1314,7 +1324,7 @@ export default function Auth() {
                     <TextInput
                       style={styles.inputField}
                       placeholder="Apto, Sala..."
-                      placeholderTextColor="#bbb"
+                      placeholderTextColor="#94a3b8"
                       value={editAddress.complemento}
                       onChangeText={(t) => setEditAddress(prev => ({ ...prev, complemento: t }))}
                     />
@@ -1327,7 +1337,7 @@ export default function Auth() {
                 <TextInput
                   style={styles.inputField}
                   placeholder="Ex: Centro"
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor="#94a3b8"
                   value={editAddress.bairro}
                   onChangeText={(t) => setEditAddress(prev => ({ ...prev, bairro: t }))}
                 />
@@ -1340,7 +1350,7 @@ export default function Auth() {
                     <TextInput
                       style={styles.inputField}
                       placeholder="Ex: São Paulo"
-                      placeholderTextColor="#bbb"
+                      placeholderTextColor="#94a3b8"
                       value={editAddress.cidade}
                       onChangeText={(t) => setEditAddress(prev => ({ ...prev, cidade: t }))}
                     />
@@ -1352,7 +1362,7 @@ export default function Auth() {
                     <TextInput
                       style={styles.inputField}
                       placeholder="SP"
-                      placeholderTextColor="#bbb"
+                      placeholderTextColor="#94a3b8"
                       value={editAddress.estado}
                       onChangeText={(t) => setEditAddress(prev => ({ ...prev, estado: t.toUpperCase().slice(0, 2) }))}
                       maxLength={2}
@@ -1381,10 +1391,10 @@ export default function Auth() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <Ionicons name="warning-outline" size={28} color="#f44336" />
-              <Text style={[styles.modalTitle, { color: '#f44336' }]}>Excluir conta</Text>
+              <Ionicons name="warning-outline" size={28} color="#ef4444" />
+              <Text style={[styles.modalTitle, { color: '#ef4444' }]}>Excluir conta</Text>
               <TouchableOpacity onPress={() => { setShowDeleteAccount(false); setDeleteConfirmText(''); }} style={styles.modalCloseBtn}>
-                <Ionicons name="close" size={24} color="#999" />
+                <Ionicons name="close" size={24} color="#94a3b8" />
               </TouchableOpacity>
             </View>
             <View style={styles.dangerBanner}>
@@ -1394,13 +1404,13 @@ export default function Auth() {
               </Text>
             </View>
             <Text style={styles.inputLabel}>
-              Digite <Text style={{ fontWeight: '800', color: '#f44336' }}>EXCLUIR</Text> para confirmar
+              Digite <Text style={{ fontWeight: '800', color: '#ef4444' }}>EXCLUIR</Text> para confirmar
             </Text>
             <View style={styles.inputRow}>
               <TextInput
-                style={[styles.inputField, { color: '#f44336' }]}
+                style={[styles.inputField, { color: '#ef4444' }]}
                 placeholder="EXCLUIR"
-                placeholderTextColor="#f4434666"
+                placeholderTextColor="#ef444466"
                 value={deleteConfirmText}
                 onChangeText={setDeleteConfirmText}
                 autoCapitalize="characters"
@@ -1428,7 +1438,7 @@ export default function Auth() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#0f172a',
   },
 
   // ── Auth (não logado) ──
@@ -1445,11 +1455,11 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366f1',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    shadowColor: '#007AFF',
+    shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1458,37 +1468,37 @@ const styles = StyleSheet.create({
   authTitle: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#1a1a1a',
+    color: '#f1f5f9',
     marginBottom: 6,
   },
   authSubtitle: {
     fontSize: 14,
-    color: '#999',
+    color: '#94a3b8',
   },
   formCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   inputLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#555',
+    color: '#94a3b8',
     marginBottom: 6,
     marginTop: 12,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F8FA',
+    backgroundColor: '#1e293b',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#E8E8ED',
+    borderColor: '#334155',
     paddingHorizontal: 12,
   },
   inputIcon: {
@@ -1498,18 +1508,18 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     fontSize: 15,
-    color: '#333',
+    color: '#f1f5f9',
   },
   eyeBtn: {
     padding: 8,
   },
   primaryBtn: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366f1',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 20,
-    shadowColor: '#007AFF',
+    shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -1524,7 +1534,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   linkText: {
-    color: '#007AFF',
+    color: '#6366f1',
     fontSize: 14,
     textAlign: 'center',
     marginTop: 16,
@@ -1536,14 +1546,14 @@ const styles = StyleSheet.create({
   },
   switchText: {
     fontSize: 14,
-    color: '#999',
+    color: '#94a3b8',
   },
   switchTextBold: {
-    color: '#007AFF',
+    color: '#6366f1',
     fontWeight: '700',
   },
   errorHint: {
-    color: '#f44336',
+    color: '#ef4444',
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
@@ -1559,7 +1569,7 @@ const styles = StyleSheet.create({
   strengthBarBg: {
     flex: 1,
     height: 4,
-    backgroundColor: '#E8E8ED',
+    backgroundColor: '#334155',
     borderRadius: 2,
     overflow: 'hidden',
   },
@@ -1583,10 +1593,10 @@ const styles = StyleSheet.create({
   },
   reqText: {
     fontSize: 12,
-    color: '#999',
+    color: '#94a3b8',
   },
   reqTextOk: {
-    color: '#4CAF50',
+    color: '#22c55e',
   },
 
   // ── Perfil Header ──
@@ -1598,13 +1608,13 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   profileHeader: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0f172a',
     paddingTop: 54,
     paddingBottom: 24,
     alignItems: 'center',
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
-    shadowColor: '#007AFF',
+    shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1614,22 +1624,22 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(99,102,241,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
     borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.4)',
+    borderColor: 'rgba(99,102,241,0.4)',
   },
   avatarText: {
     fontSize: 26,
     fontWeight: '800',
-    color: 'white',
+    color: '#f1f5f9',
   },
   profileName: {
     fontSize: 20,
     fontWeight: '700',
-    color: 'white',
+    color: '#f1f5f9',
     marginBottom: 4,
   },
   emailBadgeRow: {
@@ -1640,55 +1650,57 @@ const styles = StyleSheet.create({
   },
   profileEmail: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.85)',
+    color: '#94a3b8',
   },
   verifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: 'rgba(76,175,80,0.2)',
+    backgroundColor: 'rgba(34,197,94,0.2)',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
   },
   verifiedText: {
     fontSize: 11,
-    color: '#A5D6A7',
+    color: '#22c55e',
     fontWeight: '600',
   },
   unverifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: 'rgba(255,152,0,0.2)',
+    backgroundColor: 'rgba(245,158,11,0.2)',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
   },
   unverifiedText: {
     fontSize: 11,
-    color: '#FFE082',
+    color: '#f59e0b',
     fontWeight: '600',
   },
   profileMeta: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
+    color: '#94a3b8',
     marginTop: 4,
   },
 
   // ── Tabs ──
   tabRow: {
     flexDirection: 'row',
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     marginHorizontal: 16,
     marginTop: -12,
     borderRadius: 14,
     padding: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 4,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   tab: {
     flex: 1,
@@ -1700,15 +1712,15 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   tabActive: {
-    backgroundColor: '#EBF5FF',
+    backgroundColor: 'rgba(99,102,241,0.15)',
   },
   tabText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#999',
+    color: '#94a3b8',
   },
   tabTextActive: {
-    color: '#007AFF',
+    color: '#6366f1',
     fontWeight: '700',
   },
   tabContent: {
@@ -1719,21 +1731,21 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#333',
+    color: '#f1f5f9',
     marginBottom: 12,
     marginTop: 4,
   },
   card: {
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderRadius: 14,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 4,
     borderWidth: 1,
-    borderColor: '#F0F0F5',
+    borderColor: '#334155',
   },
 
   // ── Profile info display ──
@@ -1748,20 +1760,20 @@ const styles = StyleSheet.create({
   },
   profileInfoLabel: {
     fontSize: 11,
-    color: '#999',
+    color: '#94a3b8',
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   profileInfoValue: {
     fontSize: 15,
-    color: '#333',
+    color: '#f1f5f9',
     fontWeight: '500',
     marginTop: 2,
   },
   profileInfoDivider: {
     height: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#334155',
   },
   editProfileBtn: {
     flexDirection: 'row',
@@ -1772,13 +1784,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#007AFF',
-    backgroundColor: '#EBF5FF',
+    borderColor: '#6366f1',
+    backgroundColor: 'rgba(99,102,241,0.1)',
   },
   editProfileBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#007AFF',
+    color: '#6366f1',
   },
 
   // ── Activity log ──
@@ -1786,21 +1798,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 40,
     paddingHorizontal: 24,
-    backgroundColor: '#F9F9FB',
+    backgroundColor: '#1e293b',
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#E8E8ED',
+    borderColor: '#334155',
     borderStyle: 'dashed',
   },
   emptyActivityText: {
     fontSize: 15,
-    color: '#888',
+    color: '#94a3b8',
     fontWeight: '600',
     marginTop: 8,
   },
   emptyActivitySub: {
     fontSize: 13,
-    color: '#bbb',
+    color: '#94a3b8',
     marginTop: 4,
     textAlign: 'center',
   },
@@ -1823,16 +1835,16 @@ const styles = StyleSheet.create({
   activityTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#333',
+    color: '#f1f5f9',
   },
   activityDetail: {
     fontSize: 11,
-    color: '#999',
+    color: '#94a3b8',
     marginTop: 1,
   },
   activityTime: {
     fontSize: 11,
-    color: '#bbb',
+    color: '#94a3b8',
     fontWeight: '500',
   },
 
@@ -1840,18 +1852,18 @@ const styles = StyleSheet.create({
   securityItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderRadius: 14,
     padding: 16,
     marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 4,
     gap: 12,
     borderWidth: 1,
-    borderColor: '#F0F0F5',
+    borderColor: '#334155',
   },
   secIconCircle: {
     width: 42,
@@ -1866,15 +1878,15 @@ const styles = StyleSheet.create({
   secItemTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#333',
+    color: '#f1f5f9',
   },
   secItemDesc: {
     fontSize: 12,
-    color: '#999',
+    color: '#94a3b8',
     marginTop: 2,
   },
   statusBadgeGreen: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: 'rgba(34,197,94,0.15)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
@@ -1882,10 +1894,10 @@ const styles = StyleSheet.create({
   statusBadgeGreenText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#4CAF50',
+    color: '#22c55e',
   },
   statusBadgeOrange: {
-    backgroundColor: '#FFF3E0',
+    backgroundColor: 'rgba(245,158,11,0.15)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
@@ -1893,17 +1905,17 @@ const styles = StyleSheet.create({
   statusBadgeOrangeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#FF9800',
+    color: '#f59e0b',
   },
   dangerItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF5F5',
+    backgroundColor: 'rgba(239,68,68,0.08)',
     borderRadius: 14,
     padding: 16,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#FFCDD2',
+    borderColor: 'rgba(239,68,68,0.3)',
     gap: 12,
   },
 
@@ -1917,28 +1929,28 @@ const styles = StyleSheet.create({
   sessionLabel: {
     flex: 1,
     fontSize: 14,
-    color: '#555',
+    color: '#94a3b8',
     fontWeight: '500',
   },
   sessionValue: {
     fontSize: 13,
-    color: '#999',
+    color: '#94a3b8',
     fontWeight: '500',
   },
   sessionDivider: {
     height: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#334155',
   },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#f44336',
+    backgroundColor: '#ef4444',
     borderRadius: 12,
     paddingVertical: 14,
     marginTop: 20,
-    shadowColor: '#f44336',
+    shadowColor: '#ef4444',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -1954,10 +1966,10 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
   },
   modalCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#1e293b',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -1965,7 +1977,7 @@ const styles = StyleSheet.create({
     maxHeight: '85%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 10,
   },
@@ -1979,19 +1991,19 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 20,
     fontWeight: '700',
-    color: '#333',
+    color: '#f1f5f9',
   },
   modalCloseBtn: {
     padding: 6,
   },
   modalDesc: {
     fontSize: 13,
-    color: '#999',
+    color: '#94a3b8',
     lineHeight: 19,
     marginBottom: 8,
   },
   currentEmailBox: {
-    backgroundColor: '#F8F8FA',
+    backgroundColor: '#0f172a',
     borderRadius: 10,
     padding: 12,
     marginTop: 8,
@@ -1999,39 +2011,39 @@ const styles = StyleSheet.create({
   },
   currentEmailLabel: {
     fontSize: 11,
-    color: '#999',
+    color: '#94a3b8',
     fontWeight: '600',
     marginBottom: 2,
   },
   currentEmailValue: {
     fontSize: 15,
-    color: '#333',
+    color: '#f1f5f9',
     fontWeight: '600',
   },
   dangerBanner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    backgroundColor: '#FFF5F5',
+    backgroundColor: 'rgba(239,68,68,0.08)',
     borderRadius: 10,
     padding: 14,
     marginVertical: 12,
     borderWidth: 1,
-    borderColor: '#FFCDD2',
+    borderColor: 'rgba(239,68,68,0.3)',
   },
   dangerBannerText: {
     flex: 1,
     fontSize: 13,
-    color: '#C62828',
+    color: '#ef4444',
     lineHeight: 19,
   },
   dangerBtn: {
-    backgroundColor: '#f44336',
+    backgroundColor: '#ef4444',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 20,
-    shadowColor: '#f44336',
+    shadowColor: '#ef4444',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -2055,12 +2067,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8E8ED',
+    borderBottomColor: '#334155',
   },
   onboardSectionTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#007AFF',
+    color: '#6366f1',
   },
   rowFields: {
     flexDirection: 'row',
@@ -2071,7 +2083,34 @@ const styles = StyleSheet.create({
   },
   profileInfoValueSub: {
     fontSize: 12,
-    color: '#999',
+    color: '#94a3b8',
+    marginTop: 2,
+  },
+  fluxoxCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 14,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  fluxoxCardLeft: {
+    flex: 1,
+  },
+  fluxoxCardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#6366f1',
+  },
+  fluxoxCardDesc: {
+    fontSize: 12,
+    color: '#94a3b8',
     marginTop: 2,
   },
 });

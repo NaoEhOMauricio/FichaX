@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/leona/fluxox -/src/context/**)",
+      "Read(//c/Users/leona/fluxox -/src/components/**)",
+      "Read(//c/Users/leona/fluxox -/src/pages/**)",
+      "Read(//c/Users/leona/fluxox -/src/services/**)",
+      "Read(//c/Users/leona/.claude/projects/c--Users-leona-fichaX/memory/**)",
+      "Bash(sed -i 's/placeholderTextColor=\"#999\"/placeholderTextColor=\"#94a3b8\"/g' \"c:/Users/leona/fichaX/app/recipes.tsx\")",
+      "Bash(sed -i 's/placeholderTextColor=\"#bbb\"/placeholderTextColor=\"#94a3b8\"/g' \"c:/Users/leona/fichaX/app/recipes.tsx\")",
+      "Bash(sed -i 's/color=\"#007AFF\" style={styles.searchIcon}/color=\"#6366f1\" style={styles.searchIcon}/g' \"c:/Users/leona/fichaX/app/recipes.tsx\")",
+      "Bash(sed -i 's/color=\"#999\" \\\\/>/color=\"#94a3b8\" \\\\/>/g' \"c:/Users/leona/fichaX/app/recipes.tsx\")",
+      "Bash(sed -i 's/color=\"#ccc\" \\\\/>/color=\"#334155\" \\\\/>/g' \"c:/Users/leona/fichaX/app/recipes.tsx\")"
+    ]
+  }
+}
