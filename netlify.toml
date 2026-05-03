@@ -1,0 +1,29 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA: todas as rotas voltam para index.html (Expo Router cuida do roteamento)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Cache longo para assets com hash (JS, CSS, imagens)
+[[headers]]
+  for = "/_expo/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Sem cache para index.html (garante que o cliente sempre pega a versão nova)
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"

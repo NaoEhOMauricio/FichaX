@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, Modal, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { supabase } from '../lib/supabase';
 
 // ── Sistema de unidades ──
@@ -95,7 +95,6 @@ const formatCurrency = (value: number): string => {
 };
 
 export default function Recipes() {
-  const router = useRouter();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [recipeName, setRecipeName] = useState('');
@@ -273,10 +272,7 @@ export default function Recipes() {
   };
 
   const removeItem = (index: number) => {
-    Alert.alert('Remover item', 'Deseja remover este item da receita?', [
-      { text: 'Cancelar' },
-      { text: 'Remover', onPress: () => setRecipeItems(prev => prev.filter((_, i) => i !== index)) },
-    ]);
+    setRecipeItems(prev => prev.filter((_, i) => i !== index));
   };
 
   const openEditAmount = (index: number) => {
@@ -510,21 +506,14 @@ export default function Recipes() {
     setShowPricingSection(!!(recipe.markup_percent && recipe.markup_percent > 0));
   };
 
-  const deleteRecipe = (id: number) => {
-    Alert.alert('Confirmar exclusão', 'Tem certeza que deseja remover esta receita?', [
-      { text: 'Cancelar' },
-      {
-        text: 'Remover',
-        onPress: async () => {
-          const { error } = await supabase.from('recipes').delete().eq('id', id);
-          if (error) Alert.alert('Erro ao remover', error.message);
-          else {
-            fetchRecipes();
-            Alert.alert('Sucesso', 'Receita removida!');
-          }
-        },
-      },
-    ]);
+  const deleteRecipe = async (id: number) => {
+    if (!window.confirm('Tem certeza que deseja remover esta receita?')) return;
+    const { error } = await supabase.from('recipes').delete().eq('id', id);
+    if (error) {
+      Alert.alert('Erro ao remover', error.message);
+    } else {
+      fetchRecipes();
+    }
   };
 
   // Peso bruto (soma automática dos itens em gramas/ml — ignora unidades avulsas e porções)
@@ -570,14 +559,15 @@ export default function Recipes() {
   const profitMargin = sellingPrice > 0 ? (profit / sellingPrice) * 100 : 0;
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.title}>🍽️ Receitas</Text>
-        <Text style={styles.subtitle}>Crie e gerencie suas fichas técnicas</Text>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.title}>{editingRecipeId ? 'Editando Receita' : 'Receitas'}</Text>
+            <Text style={styles.subtitle}>Crie e gerencie suas fichas técnicas</Text>
+          </View>
+        </View>
       </View>
 
       {!isAuthenticated && (
@@ -1557,7 +1547,7 @@ export default function Recipes() {
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -1566,33 +1556,29 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0f172a',
   },
-  backButton: {
-    marginBottom: 8,
-    alignSelf: 'flex-start',
-  },
   header: {
-    backgroundColor: '#6366f1',
-    paddingTop: 50,
-    paddingHorizontal: 20,
+    backgroundColor: '#0f172a',
+    paddingTop: 28,
+    paddingHorizontal: 28,
     paddingBottom: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1e293b',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 22,
+    fontWeight: '700',
     color: '#f1f5f9',
-    marginBottom: 4,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#94a3b8',
+    fontSize: 13,
+    color: '#64748b',
+    marginTop: 2,
   },
   scrollContent: {
     flex: 1,
@@ -2130,20 +2116,17 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   modalContent: {
     backgroundColor: '#1e293b',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    paddingBottom: 40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 10,
+    borderRadius: 16,
+    padding: 24,
+    width: '90%',
+    maxWidth: 560,
+    maxHeight: '85%',
   },
   modalClose: {
     alignSelf: 'flex-end',

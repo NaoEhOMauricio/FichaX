@@ -1,15 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, Image, Animated, RefreshControl, Alert } from 'react-native';
-import BrandLogo from '../components/BrandLogo';
-import { Link } from 'expo-router';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, Animated, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-
-// Coloque seu logo em assets/logo.png
-let logoImage: any = null;
-try { logoImage = require('../assets/logo.png'); } catch (e) { logoImage = null; }
 
 interface RecipeItem {
   id: number;
@@ -105,9 +99,10 @@ export default function Home() {
       else setRecipes([]);
     });
 
-    // Auto-refresh quando receitas mudam no banco
+    // Nome único por montagem evita conflito no StrictMode do React
+    const channelId = `recipes-changes-${Date.now()}`;
     const channel = supabase
-      .channel('recipes-changes')
+      .channel(channelId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'recipes' }, () => {
         fetchRecipes();
       })
@@ -293,46 +288,15 @@ export default function Home() {
       {/* Cabeçalho */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          {logoImage ? (
-            <Image source={logoImage} style={styles.headerLogo} resizeMode="contain" />
-          ) : (
-            <View style={styles.headerLogoFallback}>
-              <Text style={styles.headerLogoText}>FX</Text>
-            </View>
-          )}
           <View style={styles.headerTitleWrap}>
-            <BrandLogo size={32} />
-            <Text style={styles.headerSubtitle}>Gestão de Fichas Técnicas</Text>
+            <Text style={styles.headerTitle}>Cardápio</Text>
+            <Text style={styles.headerSubtitle}>Visão geral das suas receitas</Text>
           </View>
+          <TouchableOpacity style={styles.refreshBtn} onPress={onRefresh} activeOpacity={0.7}>
+            <Ionicons name={refreshing ? 'sync' : 'refresh-outline'} size={18} color="#6366f1" />
+            <Text style={styles.refreshBtnText}>Atualizar</Text>
+          </TouchableOpacity>
         </View>
-      </View>
-
-      {/* Navegação rápida */}
-      <View style={styles.navRow}>
-        <Link href="/auth" asChild>
-          <TouchableOpacity style={styles.navCard} activeOpacity={0.7}>
-            <View style={[styles.navIconWrap, { backgroundColor: '#1e293b' }]}>
-              <Ionicons name="person" size={20} color="#6366f1" />
-            </View>
-            <Text style={styles.navText}>Conta</Text>
-          </TouchableOpacity>
-        </Link>
-        <Link href="/ingredients" asChild>
-          <TouchableOpacity style={styles.navCard} activeOpacity={0.7}>
-            <View style={[styles.navIconWrap, { backgroundColor: '#1e293b' }]}>
-              <Ionicons name="leaf" size={20} color="#22c55e" />
-            </View>
-            <Text style={styles.navText}>Ingredientes</Text>
-          </TouchableOpacity>
-        </Link>
-        <Link href="/recipes" asChild>
-          <TouchableOpacity style={styles.navCard} activeOpacity={0.7}>
-            <View style={[styles.navIconWrap, { backgroundColor: '#1e293b' }]}>
-              <Ionicons name="restaurant" size={20} color="#f59e0b" />
-            </View>
-            <Text style={styles.navText}>Receitas</Text>
-          </TouchableOpacity>
-        </Link>
       </View>
 
       {/* Cardápio */}
@@ -422,9 +386,6 @@ export default function Home() {
       <ScrollView
         style={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#6366f1']} tintColor="#6366f1" />
-        }
       >
         {filteredRecipes.length === 0 ? (
           <View style={styles.emptyState}>
@@ -639,91 +600,51 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#0f172a',
-    paddingTop: 54,
-    paddingHorizontal: 20,
-    paddingBottom: 22,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    paddingTop: 28,
+    paddingHorizontal: 28,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1e293b',
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-  },
-  headerLogo: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-  },
-  headerLogoFallback: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: 'rgba(99,102,241,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerLogoText: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: 'white',
+    justifyContent: 'space-between',
   },
   headerTitleWrap: {
     flex: 1,
   },
   headerTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#f1f5f9',
-    letterSpacing: 0.5,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: '#94a3b8',
-    marginTop: 2,
-  },
-  navRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 10,
-  },
-  navCard: {
-    flex: 1,
-    backgroundColor: '#1e293b',
-    borderRadius: 16,
-    padding: 14,
-    alignItems: 'center',
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  navIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navText: {
-    fontSize: 12,
+    fontSize: 22,
     fontWeight: '700',
     color: '#f1f5f9',
     letterSpacing: 0.2,
   },
+  headerSubtitle: {
+    fontSize: 13,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  refreshBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(99,102,241,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(99,102,241,0.3)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  refreshBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6366f1',
+  },
   section: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 28,
     paddingBottom: 0,
+    paddingTop: 20,
   },
   sectionTitle: {
     fontSize: 18,
@@ -831,7 +752,7 @@ const styles = StyleSheet.create({
 
   tableHeader: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
+    paddingHorizontal: 28,
     paddingVertical: 10,
     backgroundColor: '#1e293b',
     marginTop: 10,
@@ -847,7 +768,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1e293b',
-    paddingHorizontal: 16,
+    paddingHorizontal: 28,
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#334155',

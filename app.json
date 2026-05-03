@@ -27,8 +27,13 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/favicon.png"
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "backgroundColor": "#0f172a",
+      "themeColor": "#6366f1",
+      "name": "FichaX",
+      "shortName": "FichaX",
+      "description": "Gestão de Fichas Técnicas Gastronômicas"
     },
     "plugins": [
       [

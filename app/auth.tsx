@@ -24,6 +24,7 @@ export default function Auth() {
   const [activeTab, setActiveTab] = useState<ProfileTab>('perfil');
   const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');
+  const [cpf, setCpf] = useState('');
 
   // Security modals
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -50,6 +51,7 @@ export default function Auth() {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editCpf, setEditCpf] = useState('');
 
   // Address fields
   const [address, setAddress] = useState({
@@ -63,6 +65,7 @@ export default function Auth() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardName, setOnboardName] = useState('');
   const [onboardPhone, setOnboardPhone] = useState('');
+  const [onboardCpf, setOnboardCpf] = useState('');
   const [onboardAddress, setOnboardAddress] = useState({
     cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
   });
@@ -102,6 +105,7 @@ export default function Auth() {
       if (session?.user) {
         setDisplayName(session.user.user_metadata?.display_name || '');
         setPhone(session.user.user_metadata?.phone || '');
+        setCpf(session.user.user_metadata?.cpf || '');
         setAddress(session.user.user_metadata?.address || { cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '' });
         if (!session.user.user_metadata?.onboarding_complete) {
           setShowOnboarding(true);
@@ -117,8 +121,8 @@ export default function Auth() {
       setUser(session.user);
       setDisplayName(session.user.user_metadata?.display_name || '');
       setPhone(session.user.user_metadata?.phone || '');
+      setCpf(session.user.user_metadata?.cpf || '');
       setAddress(session.user.user_metadata?.address || { cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '' });
-      // Verificar se precisa de onboarding
       if (!session.user.user_metadata?.onboarding_complete) {
         setShowOnboarding(true);
       }
@@ -135,6 +139,32 @@ export default function Auth() {
 
   const handlePhoneChange = (text: string, setter: (v: string) => void) => {
     setter(formatPhoneBR(text));
+  };
+
+  // ── Máscara CPF ──
+  const formatCPF = (value: string): string => {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+  };
+
+  // ── Validação CPF (algoritmo Receita Federal) ──
+  const validateCPF = (value: string): boolean => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(digits)) return false;
+    let sum = 0;
+    for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i);
+    let remainder = sum % 11;
+    const d1 = remainder < 2 ? 0 : 11 - remainder;
+    if (d1 !== parseInt(digits[9])) return false;
+    sum = 0;
+    for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i);
+    remainder = sum % 11;
+    const d2 = remainder < 2 ? 0 : 11 - remainder;
+    return d2 === parseInt(digits[10]);
   };
 
   // ── Máscara CEP ──
@@ -181,6 +211,10 @@ export default function Auth() {
       Alert.alert('Erro', 'Digite um telefone válido.');
       return;
     }
+    if (!validateCPF(onboardCpf)) {
+      Alert.alert('Erro', 'CPF inválido. Verifique o número digitado.');
+      return;
+    }
     if (!onboardAddress.cep || !onboardAddress.rua || !onboardAddress.numero || !onboardAddress.bairro || !onboardAddress.cidade || !onboardAddress.estado) {
       Alert.alert('Erro', 'Preencha todos os campos obrigatórios do endereço.');
       return;
@@ -191,6 +225,7 @@ export default function Auth() {
       data: {
         display_name: onboardName.trim(),
         phone: onboardPhone,
+        cpf: onboardCpf,
         address: onboardAddress,
         onboarding_complete: true,
       },
@@ -201,6 +236,7 @@ export default function Auth() {
     } else {
       setDisplayName(onboardName.trim());
       setPhone(onboardPhone);
+      setCpf(onboardCpf);
       setAddress(onboardAddress);
       setShowOnboarding(false);
       addActivity('person-add-outline', '#4CAF50', 'Cadastro completo', 'Dados pessoais e endereço preenchidos');
@@ -402,65 +438,45 @@ export default function Auth() {
       Alert.alert('Erro', 'Digite EXCLUIR para confirmar.');
       return;
     }
-    Alert.alert(
-      'Última confirmação',
-      'Esta ação é IRREVERSÍVEL. Todos os seus dados serão perdidos. Deseja continuar?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir permanentemente',
-          style: 'destructive',
-          onPress: async () => {
-            setLoading(true);
-            try {
-              const { data: { user: currentUser } } = await supabase.auth.getUser();
-              if (currentUser) {
-                // Deletar dados do usuário nas tabelas
-                await supabase.from('recipes').delete().eq('user_id', currentUser.id);
-                await supabase.from('ingredients').delete().eq('user_id', currentUser.id);
-              }
-              await supabase.auth.signOut();
-              setUser(null);
-              setShowDeleteAccount(false);
-              setDeleteConfirmText('');
-              Alert.alert(
-                'Conta desativada',
-                'Seus dados foram removidos. A exclusão completa da conta de autenticação será processada automaticamente.',
-              );
-            } catch (e: any) {
-              Alert.alert('Erro', 'Não foi possível excluir os dados: ' + e.message);
-            } finally {
-              setLoading(false);
-            }
-          }
-        }
-      ]
-    );
+    if (!window.confirm('Esta ação é IRREVERSÍVEL. Todos os seus dados serão perdidos. Deseja continuar?')) return;
+    setLoading(true);
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        await supabase.from('recipes').delete().eq('user_id', currentUser.id);
+        await supabase.from('ingredients').delete().eq('user_id', currentUser.id);
+      }
+      await supabase.auth.signOut();
+      setUser(null);
+      setShowDeleteAccount(false);
+      setDeleteConfirmText('');
+      Alert.alert('Conta desativada', 'Seus dados foram removidos.');
+    } catch (e: any) {
+      Alert.alert('Erro', 'Não foi possível excluir os dados: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ── Logout ──
-  const handleLogout = () => {
-    Alert.alert('Sair da conta', 'Deseja realmente sair?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: async () => {
-          await supabase.auth.signOut();
-          setUser(null);
-          setEmail('');
-          setPassword('');
-          setActiveTab('perfil');
-        },
-      },
-    ]);
+  const handleLogout = async () => {
+    if (!window.confirm('Deseja realmente sair da conta?')) return;
+    await supabase.auth.signOut();
+    setUser(null);
+    setEmail('');
+    setPassword('');
+    setActiveTab('perfil');
   };
 
   // ── Atualizar perfil ──
   const handleUpdateProfile = async () => {
+    if (editCpf && !validateCPF(editCpf)) {
+      Alert.alert('Erro', 'CPF inválido. Verifique o número digitado.');
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.updateUser({
-      data: { display_name: editName, phone: editPhone, address: editAddress },
+      data: { display_name: editName, phone: editPhone, cpf: editCpf, address: editAddress },
     });
     setLoading(false);
     if (error) {
@@ -468,10 +484,12 @@ export default function Auth() {
     } else {
       setDisplayName(editName);
       setPhone(editPhone);
+      setCpf(editCpf);
       setAddress(editAddress);
       const changes: string[] = [];
       if (editName !== displayName) changes.push('nome');
       if (editPhone !== phone) changes.push('telefone');
+      if (editCpf !== cpf) changes.push('CPF');
       if (JSON.stringify(editAddress) !== JSON.stringify(address)) changes.push('endereço');
       addActivity('create-outline', '#4CAF50', 'Perfil atualizado', changes.length ? 'Alterado: ' + changes.join(', ') : 'Dados salvos');
       Alert.alert('Sucesso ✅', 'Perfil atualizado.');
@@ -482,6 +500,7 @@ export default function Auth() {
   const openEditProfile = () => {
     setEditName(displayName);
     setEditPhone(phone);
+    setEditCpf(cpf);
     setEditAddress({ ...address });
     setShowEditProfile(true);
   };
@@ -729,6 +748,27 @@ export default function Auth() {
               </View>
             </View>
 
+            {/* CPF */}
+            <View onLayout={trackField('cpf')}>
+              <Text style={styles.inputLabel}>CPF *</Text>
+              <View style={styles.inputRow}>
+                <Ionicons name="card-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.inputField}
+                  placeholder="000.000.000-00"
+                  placeholderTextColor="#94a3b8"
+                  value={onboardCpf}
+                  onChangeText={(t) => setOnboardCpf(formatCPF(t))}
+                  keyboardType="number-pad"
+                  maxLength={14}
+                  onFocus={() => scrollToField('cpf')}
+                />
+              </View>
+              {onboardCpf.replace(/\D/g, '').length === 11 && !validateCPF(onboardCpf) && (
+                <Text style={styles.errorHint}>CPF inválido</Text>
+              )}
+            </View>
+
             {/* Endereço */}
             <View style={styles.onboardSectionHeader}>
               <Ionicons name="location-outline" size={20} color="#6366f1" />
@@ -953,6 +993,14 @@ export default function Auth() {
                 <View style={styles.profileInfoContent}>
                   <Text style={styles.profileInfoLabel}>Telefone</Text>
                   <Text style={styles.profileInfoValue}>{phone || 'Não informado'}</Text>
+                </View>
+              </View>
+              <View style={styles.profileInfoDivider} />
+              <View style={styles.profileInfoRow}>
+                <Ionicons name="card-outline" size={20} color="#6366f1" />
+                <View style={styles.profileInfoContent}>
+                  <Text style={styles.profileInfoLabel}>CPF</Text>
+                  <Text style={styles.profileInfoValue}>{cpf || 'Não informado'}</Text>
                 </View>
               </View>
               <View style={styles.profileInfoDivider} />
@@ -1269,6 +1317,23 @@ export default function Auth() {
                   maxLength={15}
                 />
               </View>
+
+              <Text style={styles.inputLabel}>CPF</Text>
+              <View style={styles.inputRow}>
+                <Ionicons name="card-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.inputField}
+                  placeholder="000.000.000-00"
+                  placeholderTextColor="#94a3b8"
+                  value={editCpf}
+                  onChangeText={(t) => setEditCpf(formatCPF(t))}
+                  keyboardType="number-pad"
+                  maxLength={14}
+                />
+              </View>
+              {editCpf.replace(/\D/g, '').length === 11 && !validateCPF(editCpf) && (
+                <Text style={styles.errorHint}>CPF inválido</Text>
+              )}
 
               <View style={styles.onboardSectionHeader}>
                 <Ionicons name="location-outline" size={20} color="#6366f1" />
@@ -1602,14 +1667,14 @@ const styles = StyleSheet.create({
   // ── Perfil Header ──
   backButton: {
     position: 'absolute' as const,
-    top: 54,
+    top: 20,
     left: 16,
     zIndex: 10,
     padding: 4,
   },
   profileHeader: {
     backgroundColor: '#0f172a',
-    paddingTop: 54,
+    paddingTop: 20,
     paddingBottom: 24,
     alignItems: 'center',
     borderBottomLeftRadius: 24,

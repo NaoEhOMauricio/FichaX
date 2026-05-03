@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, FlatList, Alert, Modal, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
 
 interface Ingredient {
@@ -61,7 +60,6 @@ const formatCurrency = (value: number): string => {
 };
 
 export default function Ingredients() {
-  const router = useRouter();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [filteredIngredients, setFilteredIngredients] = useState<Ingredient[]>([]);
   const [name, setName] = useState('');
@@ -204,24 +202,15 @@ export default function Ingredients() {
   };
 
   const deleteIngredient = async (id: number) => {
-    Alert.alert('Confirmar exclusão', 'Tem certeza que deseja remover este ingrediente?', [
-      { text: 'Cancelar', onPress: () => {} },
-      {
-        text: 'Remover',
-        onPress: async () => {
-          setLoading(true);
-          const { error } = await supabase.from('ingredients').delete().eq('id', id);
-          setLoading(false);
-
-          if (error) {
-            Alert.alert('Erro ao remover', error.message);
-          } else {
-            Alert.alert('Sucesso', 'Ingrediente removido!');
-            fetchIngredients();
-          }
-        },
-      },
-    ]);
+    if (!window.confirm('Tem certeza que deseja remover este ingrediente?')) return;
+    setLoading(true);
+    const { error } = await supabase.from('ingredients').delete().eq('id', id);
+    setLoading(false);
+    if (error) {
+      Alert.alert('Erro ao remover', error.message);
+    } else {
+      fetchIngredients();
+    }
   };
 
   const onRefresh = async () => {
@@ -231,13 +220,18 @@ export default function Ingredients() {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.title}>🥘 Ingredientes</Text>
-        <Text style={styles.subtitle}>Gerencie seus ingredientes</Text>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.title}>Ingredientes</Text>
+            <Text style={styles.subtitle}>Gerencie seus ingredientes base</Text>
+          </View>
+          <TouchableOpacity style={styles.addHeaderBtn} onPress={() => { setName(''); setCost(''); setPackageWeight(''); setPackageUnit('kg'); setShowAddModal(true); }} activeOpacity={0.7}>
+            <Ionicons name="add" size={18} color="white" />
+            <Text style={styles.addHeaderBtnText}>Novo ingrediente</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       
       {!isAuthenticated && (
@@ -324,11 +318,6 @@ export default function Ingredients() {
           )}
         </View>
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <TouchableOpacity style={styles.fab} onPress={() => setShowAddModal(true)}>
-        <Ionicons name="add" size={24} color="white" />
-      </TouchableOpacity>
 
       {/* Modal Editar */}
       <Modal visible={showEditModal} transparent animationType="slide">
@@ -507,7 +496,7 @@ export default function Ingredients() {
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -516,33 +505,43 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0f172a',
   },
-  backButton: {
-    marginBottom: 8,
-    alignSelf: 'flex-start',
-  },
   header: {
-    backgroundColor: '#6366f1',
-    paddingTop: 50,
-    paddingHorizontal: 20,
+    backgroundColor: '#0f172a',
+    paddingTop: 28,
+    paddingHorizontal: 28,
     paddingBottom: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1e293b',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 22,
+    fontWeight: '700',
     color: '#f1f5f9',
-    marginBottom: 4,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#94a3b8',
+    fontSize: 13,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  addHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#6366f1',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 8,
+  },
+  addHeaderBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: 'white',
   },
   scrollContent: {
     paddingHorizontal: 0,
@@ -783,21 +782,17 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   modalContent: {
     backgroundColor: '#1e293b',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
+    borderRadius: 16,
+    padding: 24,
+    width: '90%',
+    maxWidth: 500,
     maxHeight: '85%',
-    paddingBottom: 40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 10,
   },
   modalClose: {
     alignSelf: 'flex-end',
@@ -844,22 +839,6 @@ const styles = StyleSheet.create({
     color: '#f1f5f9',
     fontSize: 15,
     fontWeight: '600',
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 20,
-    backgroundColor: '#6366f1',
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
   },
   listContainer: {
     paddingHorizontal: 20,
