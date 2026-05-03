@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, Animated, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
 
 interface RecipeItem {
   id: number;
@@ -271,16 +269,17 @@ export default function Home() {
       </html>
     `;
 
-    try {
-      const { uri } = await Print.printToFileAsync({ html });
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: `Ficha - ${recipe.name}` });
-      } else {
-        Alert.alert('PDF gerado', 'O PDF foi criado mas o compartilhamento não está disponível neste dispositivo.');
-      }
-    } catch (e: any) {
-      Alert.alert('Erro', 'Não foi possível gerar o PDF: ' + e.message);
+    const printWindow = window.open('', '_blank', 'width=800,height=900');
+    if (!printWindow) {
+      Alert.alert('Erro', 'Permita pop-ups para gerar o PDF.');
+      return;
     }
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 600);
   };
 
   return (
