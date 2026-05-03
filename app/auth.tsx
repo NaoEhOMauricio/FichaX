@@ -928,9 +928,6 @@ export default function Auth() {
     <View style={styles.container}>
       {/* Header perfil */}
       <View style={styles.profileHeader}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
         <View style={styles.avatarCircle}>
           <Text style={styles.avatarText}>{initials}</Text>
         </View>
@@ -1665,13 +1662,6 @@ const styles = StyleSheet.create({
   },
 
   // ── Perfil Header ──
-  backButton: {
-    position: 'absolute' as const,
-    top: 20,
-    left: 16,
-    zIndex: 10,
-    padding: 4,
-  },
   profileHeader: {
     backgroundColor: '#0f172a',
     paddingTop: 20,
