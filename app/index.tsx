@@ -146,128 +146,255 @@ export default function Home() {
     const now = new Date().toLocaleDateString('pt-BR');
     const portionData = getPortionInfo(recipe, calcs.totalCost);
 
-    const html = `
-      <html>
-      <head>
-        <meta charset="utf-8" />
-        <style>
-          body { font-family: 'Helvetica', sans-serif; padding: 30px; color: #333; }
-          .brand-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #007AFF; padding-bottom: 14px; margin-bottom: 20px; }
-          .brand-logo { font-size: 32px; font-weight: 900; color: #007AFF; letter-spacing: -1px; }
-          .brand-logo span { color: #FF9500; }
-          .brand-tagline { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 2px; }
-          h1 { color: #007AFF; font-size: 28px; margin-bottom: 4px; margin-top: 0; }
-          .subtitle { color: #666; font-size: 13px; margin-bottom: 20px; }
-          .category { display: inline-block; background: #E3F2FD; color: #007AFF; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-bottom: 16px; }
-          table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-          th { background: #007AFF; color: white; text-align: left; padding: 10px 12px; font-size: 13px; }
-          td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 13px; }
-          tr:nth-child(even) { background: #f9f9f9; }
-          .totals { margin-top: 20px; background: #f5f5f5; border-radius: 10px; padding: 16px; }
-          .total-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
-          .total-label { color: #666; }
-          .total-value { font-weight: bold; }
-          .highlight { color: #007AFF; font-size: 18px; font-weight: bold; }
-          .profit { color: #4CAF50; }
-          .instructions { margin-top: 20px; padding: 16px; background: #FFF8E1; border-radius: 10px; border-left: 4px solid #FFC107; }
-          .instructions h3 { margin: 0 0 8px; color: #F57C00; }
-          .instructions p { font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
-          .footer { margin-top: 40px; text-align: center; padding-top: 16px; border-top: 2px solid #E8E8E8; }
-          .footer-brand { font-size: 16px; font-weight: 900; color: #007AFF; letter-spacing: -0.5px; }
-          .footer-brand span { color: #FF9500; }
-          .footer-sub { font-size: 10px; color: #bbb; margin-top: 4px; }
-          .watermark { position: fixed; bottom: 10px; right: 20px; font-size: 9px; color: #ddd; }
-        </style>
-      </head>
-      <body>
-        <div class="brand-header">
-          <div>
-            <div class="brand-logo">Ficha<span>X</span></div>
-            <div class="brand-tagline">Gestão de Custos Gastronômicos</div>
-          </div>
-        </div>
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: #ffffff;
+      color: #1e293b;
+      line-height: 1.5;
+    }
+    .page { max-width: 680px; margin: 0 auto; padding: 40px 48px; }
 
-        <h1>${recipe.name}</h1>
-        ${recipe.category ? `<span class="category">${recipe.category}</span>` : ''}
-        <p class="subtitle">Ficha técnica gerada em ${now}</p>
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding-bottom: 20px;
+      border-bottom: 3px solid #6366f1;
+      margin-bottom: 28px;
+    }
+    .brand-name { font-size: 26px; font-weight: 900; color: #007AFF; letter-spacing: -1px; line-height: 1; }
+    .brand-name span { color: #FF9500; }
+    .brand-sub { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px; }
+    .header-right { text-align: right; }
+    .header-date { font-size: 11px; color: #64748b; }
+    .header-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
 
-        <table>
+    /* ── Título da receita ── */
+    .recipe-header { margin-bottom: 24px; }
+    .recipe-name { font-size: 26px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
+    .recipe-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .badge {
+      display: inline-block; padding: 3px 12px; border-radius: 20px;
+      font-size: 11px; font-weight: 700;
+    }
+    .badge-category { background: #eef2ff; color: #6366f1; }
+
+    /* ── Seção título ── */
+    .section { margin-bottom: 24px; }
+    .section-title {
+      font-size: 11px; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+
+    /* ── Tabela ingredientes ── */
+    .ing-table { width: 100%; border-collapse: collapse; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; }
+    .ing-table thead tr { background: #6366f1; }
+    .ing-table th { padding: 9px 14px; text-align: left; font-size: 11px; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
+    .ing-table th:last-child { text-align: right; }
+    .ing-table td { padding: 9px 14px; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
+    .ing-table tbody tr:last-child td { border-bottom: none; }
+    .ing-table tbody tr:nth-child(even) td { background: #f8fafc; }
+    .td-cost { text-align: right; font-weight: 600; color: #6366f1; }
+    .type-pill {
+      display: inline-block; padding: 1px 5px; border-radius: 3px;
+      font-size: 8px; font-weight: 800; color: white; margin-right: 5px; vertical-align: middle;
+    }
+    .pill-ing { background: #22c55e; }
+    .pill-rec { background: #f59e0b; }
+
+    /* ── Cards financeiros ── */
+    .finance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .finance-card {
+      background: #f8fafc; border: 1px solid #e2e8f0;
+      border-radius: 10px; padding: 14px 16px;
+    }
+    .finance-card.accent { background: #eef2ff; border-color: #c7d2fe; }
+    .finance-card.green  { background: #f0fdf4; border-color: #bbf7d0; }
+    .fc-label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .fc-value { font-size: 20px; font-weight: 800; color: #0f172a; }
+    .finance-card.accent .fc-value { color: #6366f1; }
+    .finance-card.green  .fc-value { color: #16a34a; }
+    .fc-sub { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+
+    /* ── Porções ── */
+    .portion-table { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+    .portion-table td { padding: 9px 14px; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
+    .portion-table tr:last-child td { border-bottom: none; }
+    .portion-table tbody tr:nth-child(even) td { background: #f8fafc; }
+    .pt-label { color: #64748b; }
+    .pt-value { text-align: right; font-weight: 700; color: #0f172a; }
+
+    /* ── Modo de preparo ── */
+    .instructions-box {
+      background: #fffbeb; border: 1px solid #fcd34d;
+      border-left: 4px solid #f59e0b; border-radius: 10px; padding: 16px;
+    }
+    .instructions-text { font-size: 13px; color: #78350f; line-height: 1.75; white-space: pre-wrap; }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 36px; padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .footer-brand { font-size: 15px; font-weight: 900; color: #007AFF; }
+    .footer-brand span { color: #FF9500; }
+    .footer-sub { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+    .footer-url { font-size: 10px; color: #94a3b8; text-align: right; }
+
+    @media print {
+      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .page { padding: 24px 36px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <div class="brand-name">Ficha<span>X</span></div>
+      <div class="brand-sub">Gestão de Fichas Técnicas</div>
+    </div>
+    <div class="header-right">
+      <div class="header-label">Gerado em</div>
+      <div class="header-date">${now}</div>
+    </div>
+  </div>
+
+  <!-- Título da receita -->
+  <div class="recipe-header">
+    <div class="recipe-name">${recipe.name}</div>
+    <div class="recipe-meta">
+      ${recipe.category ? `<span class="badge badge-category">${recipe.category}</span>` : ''}
+    </div>
+  </div>
+
+  <!-- Composição -->
+  <div class="section">
+    <div class="section-title">Composição</div>
+    <table class="ing-table">
+      <thead>
+        <tr>
+          <th>Ingrediente</th>
+          <th style="text-align:center">Qtd</th>
+          <th style="text-align:center">Unidade</th>
+          <th style="text-align:right">Custo</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map(item => `
           <tr>
-            <th>Ingrediente</th>
-            <th>Qtd</th>
-            <th>Unidade</th>
-            <th style="text-align:right">Custo</th>
+            <td>
+              <span class="type-pill ${item.type === 'ingredient' ? 'pill-ing' : 'pill-rec'}">${item.type === 'ingredient' ? 'ING' : 'REC'}</span>
+              ${item.name}
+            </td>
+            <td style="text-align:center">${item.amount}</td>
+            <td style="text-align:center">${item.unit}</td>
+            <td class="td-cost">${formatCurrency(item.cost)}</td>
           </tr>
-          ${items.map(item => `
-            <tr>
-              <td>${item.type === 'recipe' ? '🍽️ ' : ''}${item.name}</td>
-              <td>${item.amount}</td>
-              <td>${item.unit}</td>
-              <td style="text-align:right">${formatCurrency(item.cost)}</td>
-            </tr>
-          `).join('')}
-        </table>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>
 
-        <div class="totals">
-          <div class="total-row">
-            <span class="total-label">Custo total</span>
-            <span class="total-value">${formatCurrency(calcs.totalCost)}</span>
-          </div>
-          ${calcs.hasPricing ? `
-          <div class="total-row">
-            <span class="total-label">Markup</span>
-            <span class="total-value">${calcs.markup}%</span>
-          </div>
-          <div class="total-row">
-            <span class="total-label">Preço de venda</span>
-            <span class="highlight">${formatCurrency(calcs.sellingPrice)}</span>
-          </div>
-          <div class="total-row">
-            <span class="total-label">Lucro</span>
-            <span class="total-value profit">${formatCurrency(calcs.profit)} (${calcs.profitMargin.toFixed(1)}%)</span>
-          </div>
-          ` : ''}
-        </div>
+  <!-- Resumo financeiro -->
+  ${calcs.hasPricing ? `
+  <div class="section">
+    <div class="section-title">Resumo Financeiro</div>
+    <div class="finance-grid">
+      <div class="finance-card">
+        <div class="fc-label">Custo Total</div>
+        <div class="fc-value">${formatCurrency(calcs.totalCost)}</div>
+        <div class="fc-sub">Soma dos ingredientes</div>
+      </div>
+      <div class="finance-card">
+        <div class="fc-label">Markup</div>
+        <div class="fc-value">${calcs.markup.toFixed(0)}%</div>
+        <div class="fc-sub">Sobre o custo</div>
+      </div>
+      <div class="finance-card accent">
+        <div class="fc-label">Preço de Venda</div>
+        <div class="fc-value">${formatCurrency(calcs.sellingPrice)}</div>
+        <div class="fc-sub">Com markup aplicado</div>
+      </div>
+      <div class="finance-card green">
+        <div class="fc-label">Lucro Bruto</div>
+        <div class="fc-value">${formatCurrency(calcs.profit)}</div>
+        <div class="fc-sub">Margem: ${calcs.profitMargin.toFixed(1)}%</div>
+      </div>
+    </div>
+  </div>
+  ` : `
+  <div class="section">
+    <div class="section-title">Custo da Receita</div>
+    <div class="finance-grid">
+      <div class="finance-card accent">
+        <div class="fc-label">Custo Total</div>
+        <div class="fc-value">${formatCurrency(calcs.totalCost)}</div>
+        <div class="fc-sub">Soma dos ingredientes</div>
+      </div>
+    </div>
+  </div>
+  `}
 
-        ${portionData ? `
-          <div class="totals" style="margin-top:16px">
-            <div class="total-row">
-              <span class="total-label">🍽️ Peso da porção</span>
-              <span class="highlight">${recipe.portion_weight} ${recipe.portion_weight_unit || 'g'}</span>
-            </div>
-            <div class="total-row">
-              <span class="total-label">Rende</span>
-              <span class="total-value">${portionData.numPortions % 1 === 0 ? portionData.numPortions.toFixed(0) : portionData.numPortions.toFixed(1)} porções</span>
-            </div>
-            <div class="total-row">
-              <span class="total-label">Custo por porção</span>
-              <span class="highlight" style="color:#4CAF50">${formatCurrency(portionData.costPerPortion)}</span>
-            </div>
-          </div>
-        ` : recipe.total_weight && recipe.total_weight > 0 ? `
-          <div class="totals" style="margin-top:16px">
-            <div class="total-row">
-              <span class="total-label">⚖️ Peso do Prato (após preparo)</span>
-              <span class="highlight">${recipe.total_weight} ${recipe.total_weight_unit || 'g'}</span>
-            </div>
-          </div>
-        ` : ''}
+  <!-- Porções -->
+  ${portionData ? `
+  <div class="section">
+    <div class="section-title">Porções</div>
+    <table class="portion-table">
+      <tbody>
+        <tr><td class="pt-label">Peso da porção</td><td class="pt-value">${recipe.portion_weight} ${recipe.portion_weight_unit || 'g'}</td></tr>
+        <tr><td class="pt-label">Rende</td><td class="pt-value">${portionData.numPortions % 1 === 0 ? portionData.numPortions.toFixed(0) : portionData.numPortions.toFixed(1)} porções</td></tr>
+        <tr><td class="pt-label">Custo por porção</td><td class="pt-value" style="color:#16a34a">${formatCurrency(portionData.costPerPortion)}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  ` : recipe.total_weight && recipe.total_weight > 0 ? `
+  <div class="section">
+    <div class="section-title">Rendimento</div>
+    <table class="portion-table">
+      <tbody>
+        <tr><td class="pt-label">Peso do prato (após preparo)</td><td class="pt-value">${recipe.total_weight} ${recipe.total_weight_unit || 'g'}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  ` : ''}
 
-        ${recipe.instructions ? `
-          <div class="instructions">
-            <h3>Modo de preparo</h3>
-            <p>${recipe.instructions}</p>
-          </div>
-        ` : ''}
+  <!-- Modo de preparo -->
+  ${recipe.instructions ? `
+  <div class="section">
+    <div class="section-title">Modo de Preparo</div>
+    <div class="instructions-box">
+      <div class="instructions-text">${recipe.instructions}</div>
+    </div>
+  </div>
+  ` : ''}
 
-        <div class="footer">
-          <div class="footer-brand">Ficha<span>X</span></div>
-          <div class="footer-sub">Documento gerado automaticamente pelo aplicativo FichaX — fichatecnica.app</div>
-        </div>
-        <div class="watermark">Gerado por FichaX</div>
-      </body>
-      </html>
-    `;
+  <!-- Footer -->
+  <div class="footer">
+    <div>
+      <div class="footer-brand">Ficha<span>X</span></div>
+      <div class="footer-sub">fichax.netlify.app</div>
+    </div>
+    <div class="footer-url">Gerado automaticamente</div>
+  </div>
+
+</div>
+</body>
+</html>`;
 
     const printWindow = window.open('', '_blank', 'width=800,height=900');
     if (!printWindow) {
