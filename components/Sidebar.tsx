@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import BrandLogo from './BrandLogo';
 
+const ADMIN_EMAIL = 'leonardo.clemente.braga@gmail.com';
+
 const NAV_ITEMS = [
   { href: '/',             icon: 'book-outline',       label: 'Cardápio',     color: '#6366f1' },
   { href: '/ingredients',  icon: 'leaf-outline',        label: 'Ingredientes', color: '#22c55e' },
@@ -65,6 +67,17 @@ export default function Sidebar() {
           );
         })}
       </View>
+
+      {email === ADMIN_EMAIL && (
+        <TouchableOpacity
+          style={[styles.adminBtn, isActive('/admin') && styles.adminBtnActive]}
+          onPress={() => router.push('/admin')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="shield-checkmark" size={14} color={isActive('/admin') ? '#fff' : '#6366f1'} />
+          <Text style={[styles.adminBtnText, isActive('/admin') && { color: '#fff' }]}>Admin</Text>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity
         style={[styles.userArea, isActive('/auth') && styles.userAreaActive]}
@@ -147,6 +160,27 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
+  },
+  adminBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(99,102,241,0.4)',
+    backgroundColor: 'rgba(99,102,241,0.08)',
+  },
+  adminBtnActive: {
+    backgroundColor: '#6366f1',
+    borderColor: '#6366f1',
+  },
+  adminBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#6366f1',
   },
   userArea: {
     flexDirection: 'row',
