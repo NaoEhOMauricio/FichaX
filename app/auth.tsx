@@ -15,6 +15,7 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [signUpName, setSignUpName] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -292,6 +293,10 @@ export default function Auth() {
       return;
     }
     if (isSignUp) {
+      if (!signUpName.trim()) {
+        Alert.alert('Erro', 'Digite seu nome completo.');
+        return;
+      }
       if (!isPasswordStrong(password)) {
         Alert.alert('Erro', 'A senha deve ter pelo menos 8 caracteres, com maiúscula, minúscula e número.');
         return;
@@ -309,7 +314,7 @@ export default function Auth() {
         password,
         options: {
           emailRedirectTo: undefined,
-          data: { display_name: '', phone: '' },
+          data: { display_name: signUpName.trim(), phone: '' },
         },
       });
       if (error) Alert.alert('Erro no cadastro', error.message);
@@ -571,6 +576,23 @@ export default function Auth() {
 
           {/* Form */}
           <View style={styles.formCard}>
+            {isSignUp && (
+              <>
+                <Text style={styles.inputLabel}>Nome completo *</Text>
+                <View style={styles.inputRow}>
+                  <Ionicons name="person-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="Seu nome completo"
+                    placeholderTextColor="#94a3b8"
+                    value={signUpName}
+                    onChangeText={setSignUpName}
+                    autoCapitalize="words"
+                    editable={!loading}
+                  />
+                </View>
+              </>
+            )}
             <Text style={styles.inputLabel}>E-mail</Text>
             <View style={styles.inputRow}>
               <Ionicons name="mail-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
@@ -645,7 +667,7 @@ export default function Auth() {
             )}
           </View>
 
-          <TouchableOpacity onPress={() => { setIsSignUp(!isSignUp); setConfirmPassword(''); }} style={styles.switchBtn}>
+          <TouchableOpacity onPress={() => { setIsSignUp(!isSignUp); setConfirmPassword(''); setSignUpName(''); }} style={styles.switchBtn}>
             <Text style={styles.switchText}>
               {isSignUp ? 'Já tem uma conta? ' : 'Não tem conta? '}
               <Text style={styles.switchTextBold}>{isSignUp ? 'Entrar' : 'Cadastrar'}</Text>

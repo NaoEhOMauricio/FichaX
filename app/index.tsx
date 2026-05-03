@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, Animated, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 
@@ -56,6 +57,7 @@ const getPortionInfo = (recipe: Recipe, totalCost: number) => {
 };
 
 export default function Home() {
+  const router = useRouter();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [searchText, setSearchText] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
@@ -63,6 +65,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [onboardingPending, setOnboardingPending] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const toastOpacity = useRef(new Animated.Value(0)).current;
@@ -87,12 +90,14 @@ export default function Home() {
     const checkAndFetch = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
+      setOnboardingPending(!!session && !session.user.user_metadata?.onboarding_complete);
       if (session) fetchRecipes();
     };
     checkAndFetch();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
+      setOnboardingPending(!!session && !session?.user.user_metadata?.onboarding_complete);
       if (session) fetchRecipes();
       else setRecipes([]);
     });
@@ -424,6 +429,17 @@ export default function Home() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Banner onboarding pendente */}
+      {isAuthenticated && onboardingPending && (
+        <TouchableOpacity style={styles.onboardingBanner} onPress={() => router.push('/auth')} activeOpacity={0.85}>
+          <Ionicons name="alert-circle" size={18} color="#f59e0b" />
+          <Text style={styles.onboardingBannerText}>
+            Complete seu cadastro — adicione nome, telefone, CPF e endereço.
+          </Text>
+          <Ionicons name="chevron-forward" size={16} color="#f59e0b" />
+        </TouchableOpacity>
+      )}
 
       {/* Cardápio */}
       <View style={styles.section}>
@@ -771,6 +787,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     paddingBottom: 0,
     paddingTop: 20,
+  },
+  onboardingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: 'rgba(245,158,11,0.08)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(245,158,11,0.2)',
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#f59e0b',
+  },
+  onboardingBannerText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#f59e0b',
+    fontWeight: '600',
   },
   sectionTitle: {
     fontSize: 18,
