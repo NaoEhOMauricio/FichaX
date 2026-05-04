@@ -16,6 +16,7 @@ export default function Auth() {
   // Auth state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [signUpName, setSignUpName] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -292,27 +293,13 @@ export default function Auth() {
 
   // ── Autenticação ──
   const handleAuth = async () => {
-    if (!validateEmail(email)) {
-      Alert.alert('Erro', 'Digite um e-mail válido.');
-      return;
-    }
-    if (password.length < 6) {
-      Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres.');
-      return;
-    }
+    setAuthError('');
+    if (!validateEmail(email)) { setAuthError('Digite um e-mail válido.'); return; }
+    if (password.length < 6) { setAuthError('A senha deve ter pelo menos 6 caracteres.'); return; }
     if (isSignUp) {
-      if (!signUpName.trim()) {
-        Alert.alert('Erro', 'Digite seu nome completo.');
-        return;
-      }
-      if (!isPasswordStrong(password)) {
-        Alert.alert('Erro', 'A senha deve ter pelo menos 8 caracteres, com maiúscula, minúscula e número.');
-        return;
-      }
-      if (password !== confirmPassword) {
-        Alert.alert('Erro', 'As senhas não coincidem.');
-        return;
-      }
+      if (!signUpName.trim()) { setAuthError('Digite seu nome completo.'); return; }
+      if (!isPasswordStrong(password)) { setAuthError('A senha deve ter 8+ caracteres, maiúscula, minúscula e número.'); return; }
+      if (password !== confirmPassword) { setAuthError('As senhas não coincidem.'); return; }
     }
 
     setLoading(true);
@@ -325,16 +312,16 @@ export default function Auth() {
           data: { display_name: signUpName.trim(), phone: '' },
         },
       });
-      if (error) Alert.alert('Erro no cadastro', error.message);
-      else Alert.alert(
-        'Verifique seu e-mail 📧',
-        'Enviamos um link de confirmação para ' + email + '. Clique no link para ativar sua conta.',
-        [{ text: 'OK', onPress: () => router.replace('/') }],
-      );
+      if (error) setAuthError(error.message);
+      else setAuthError('✅ Verifique seu e-mail para ativar a conta.');
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) Alert.alert('Erro ao entrar', error.message);
-      else {
+      if (error) {
+        setAuthError(error.message === 'Invalid login credentials'
+          ? 'E-mail ou senha incorretos.'
+          : error.message);
+      } else {
+        setAuthError('');
         checkUser();
         addActivity('log-in-outline', '#007AFF', 'Login realizado', 'Acesso via e-mail e senha');
       }
@@ -667,6 +654,19 @@ export default function Auth() {
                 <Text style={styles.primaryBtnText}>{isSignUp ? 'Cadastrar' : 'Entrar'}</Text>
               )}
             </TouchableOpacity>
+
+            {authError !== '' && (
+              <View style={[styles.authErrorBox, authError.startsWith('✅') && styles.authSuccessBox]}>
+                <Ionicons
+                  name={authError.startsWith('✅') ? 'checkmark-circle' : 'alert-circle'}
+                  size={16}
+                  color={authError.startsWith('✅') ? '#22c55e' : '#ef4444'}
+                />
+                <Text style={[styles.authErrorText, authError.startsWith('✅') && styles.authSuccessText]}>
+                  {authError.replace('✅ ', '')}
+                </Text>
+              </View>
+            )}
 
             {!isSignUp && (
               <TouchableOpacity onPress={() => { setResetEmail(email); setShowResetPassword(true); }}>
@@ -1658,6 +1658,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
+  },
+  authErrorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(239,68,68,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.3)',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 12,
+  },
+  authSuccessBox: {
+    backgroundColor: 'rgba(34,197,94,0.1)',
+    borderColor: 'rgba(34,197,94,0.3)',
+  },
+  authErrorText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#ef4444',
+    fontWeight: '500',
+  },
+  authSuccessText: {
+    color: '#22c55e',
   },
 
   // ── Strength bar ──

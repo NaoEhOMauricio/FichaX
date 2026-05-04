@@ -118,7 +118,9 @@ export default function Home() {
   }, []);
 
   const fetchRecipes = async () => {
-    const { data } = await supabase.from('recipes').select('*');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { data } = await supabase.from('recipes').select('*').eq('user_id', session.user.id);
     setRecipes((data || []).sort((a: any, b: any) => a.name.localeCompare(b.name, 'pt-BR')));
   };
 

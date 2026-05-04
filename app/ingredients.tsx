@@ -98,7 +98,9 @@ export default function Ingredients() {
 
   const fetchIngredients = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('ingredients').select('*');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setLoading(false); return; }
+    const { data, error } = await supabase.from('ingredients').select('*').eq('user_id', session.user.id);
     if (error) {
       Alert.alert('Erro ao buscar ingredientes', error.message);
     } else {

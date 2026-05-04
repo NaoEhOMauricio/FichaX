@@ -151,13 +151,17 @@ export default function Recipes() {
   };
 
   const fetchIngredients = async () => {
-    const { data, error } = await supabase.from('ingredients').select('*');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { data, error } = await supabase.from('ingredients').select('*').eq('user_id', session.user.id);
     if (error) Alert.alert('Erro ao buscar ingredientes', error.message);
     else setIngredients((data || []).sort((a: any, b: any) => a.name.localeCompare(b.name, 'pt-BR')));
   };
 
   const fetchRecipes = async () => {
-    const { data, error } = await supabase.from('recipes').select('*');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { data, error } = await supabase.from('recipes').select('*').eq('user_id', session.user.id);
     if (error) Alert.alert('Erro ao buscar receitas', error.message);
     else setRecipes((data || []).sort((a: any, b: any) => a.name.localeCompare(b.name, 'pt-BR')));
   };
