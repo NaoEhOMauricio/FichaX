@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
 
-const ADMIN_EMAIL = 'leonardo.clemente.braga@gmail.com';
+const ADMIN_EMAIL   = 'leonardo.clemente.braga@gmail.com';
+const SUPABASE_URL  = process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
 interface UserProfile {
   id: string;
@@ -64,6 +66,8 @@ export default function Admin() {
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filterPlan, setFilterPlan] = useState<'all' | 'pro' | 'free'>('all');
+  const [actionMsg, setActionMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null); // userId em ação
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -140,6 +144,33 @@ export default function Admin() {
     setLoading(false);
   };
 
+  const adminAction = async (action: string, userId: string, extra?: object) => {
+    setActionLoading(userId + action);
+    setActionMsg(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-update-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token ?? SUPABASE_ANON}`,
+        },
+        body: JSON.stringify({ action, user_id: userId, ...extra }),
+      });
+      const json = await res.json();
+      if (json.ok) {
+        setActionMsg({ text: 'Atualizado com sucesso!', ok: true });
+        fetchData();
+      } else {
+        setActionMsg({ text: json.error ?? 'Erro desconhecido', ok: false });
+      }
+    } catch (e: any) {
+      setActionMsg({ text: e.message, ok: false });
+    }
+    setActionLoading(null);
+    setTimeout(() => setActionMsg(null), 4000);
+  };
+
   if (!authChecked) return <View style={styles.centered}><ActivityIndicator color="#6366f1" size="large" /></View>;
 
   if (!isAdmin) {
@@ -197,6 +228,13 @@ export default function Admin() {
           <Text style={styles.refreshBtnText}>Atualizar</Text>
         </TouchableOpacity>
       </View>
+
+      {actionMsg && (
+        <View style={[styles.toastBar, actionMsg.ok ? styles.toastBarOk : styles.toastBarErr]}>
+          <Ionicons name={actionMsg.ok ? 'checkmark-circle' : 'alert-circle'} size={16} color="white" />
+          <Text style={styles.toastBarText}>{actionMsg.text}</Text>
+        </View>
+      )}
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Stats */}
@@ -337,6 +375,67 @@ export default function Admin() {
                         <DetailRow icon="calendar-outline" label="Membro desde" value={formatDateTime(user.created_at)} />
                         <DetailRow icon="finger-print-outline" label="ID" value={user.id.slice(0, 16) + '...'} mono />
                       </View>
+                    </View>
+
+                    {/* Ações de assinatura */}
+                    <View style={styles.actionRow}>
+                      {user.plan !== 'pro' ? (
+                        <TouchableOpacity
+                          style={[styles.actionBtn, styles.actionBtnPro]}
+                          onPress={() => adminAction('activate_pro', user.id)}
+                          disabled={actionLoading === user.id + 'activate_pro'}
+                        >
+                          <Ionicons name="star" size={13} color="white" />
+                          <Text style={styles.actionBtnText}>
+                            {actionLoading === user.id + 'activate_pro' ? '...' : 'Ativar Pro (31d)'}
+                          </Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <>
+                          <TouchableOpacity
+                            style={[styles.actionBtn, styles.actionBtnExtend]}
+                            onPress={() => adminAction('extend_pro', user.id, { days: 31 })}
+                            disabled={actionLoading === user.id + 'extend_pro'}
+                          >
+                            <Ionicons name="add-circle-outline" size={13} color="#22c55e" />
+                            <Text style={[styles.actionBtnText, { color: '#22c55e' }]}>
+                              {actionLoading === user.id + 'extend_pro' ? '...' : '+31 dias'}
+                            </Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.actionBtn, styles.actionBtnRevoke]}
+                            onPress={() => adminAction('revoke_pro', user.id)}
+                            disabled={actionLoading === user.id + 'revoke_pro'}
+                          >
+                            <Ionicons name="close-circle-outline" size={13} color="#ef4444" />
+                            <Text style={[styles.actionBtnText, { color: '#ef4444' }]}>
+                              {actionLoading === user.id + 'revoke_pro' ? '...' : 'Revogar Pro'}
+                            </Text>
+                          </TouchableOpacity>
+                        </>
+                      )}
+
+                      <TouchableOpacity
+                        style={[styles.actionBtn, user.mesa ? styles.actionBtnToggleOn : styles.actionBtnToggleOff]}
+                        onPress={() => adminAction('toggle_mesa', user.id, { value: !user.mesa })}
+                        disabled={actionLoading === user.id + 'toggle_mesa'}
+                      >
+                        <Ionicons name="storefront-outline" size={13} color={user.mesa ? '#22c55e' : '#64748b'} />
+                        <Text style={[styles.actionBtnText, { color: user.mesa ? '#22c55e' : '#64748b' }]}>
+                          {actionLoading === user.id + 'toggle_mesa' ? '...' : `Mesa: ${user.mesa ? 'ON → OFF' : 'OFF → ON'}`}
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[styles.actionBtn, user.delivery ? styles.actionBtnToggleOn : styles.actionBtnToggleOff]}
+                        onPress={() => adminAction('toggle_delivery', user.id, { value: !user.delivery })}
+                        disabled={actionLoading === user.id + 'toggle_delivery'}
+                      >
+                        <Ionicons name="bicycle-outline" size={13} color={user.delivery ? '#22c55e' : '#64748b'} />
+                        <Text style={[styles.actionBtnText, { color: user.delivery ? '#22c55e' : '#64748b' }]}>
+                          {actionLoading === user.id + 'toggle_delivery' ? '...' : `Delivery: ${user.delivery ? 'ON → OFF' : 'OFF → ON'}`}
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 )}
@@ -536,4 +635,46 @@ const styles = StyleSheet.create({
   sqlText: { fontSize: 11, color: '#94a3b8', fontFamily: 'monospace', lineHeight: 18 },
   retryBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#6366f1', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8, alignSelf: 'flex-start' },
   retryBtnText: { color: 'white', fontWeight: '700' },
+
+  // ── Toast bar ──
+  toastBar: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 24, paddingVertical: 10,
+  },
+  toastBarOk:  { backgroundColor: 'rgba(34,197,94,0.15)'  },
+  toastBarErr: { backgroundColor: 'rgba(239,68,68,0.15)'  },
+  toastBarText: { fontSize: 13, fontWeight: '600', color: 'white', flex: 1 },
+
+  // ── Botões de ação de assinatura ──
+  actionRow: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: 8,
+    paddingTop: 16, marginTop: 12,
+    borderTopWidth: 1, borderTopColor: '#1e293b',
+  },
+  actionBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 12, paddingVertical: 7,
+    borderRadius: 8, borderWidth: 1,
+  },
+  actionBtnText: { fontSize: 12, fontWeight: '600' },
+  actionBtnPro: {
+    backgroundColor: 'rgba(99,102,241,0.15)',
+    borderColor: 'rgba(99,102,241,0.4)',
+  },
+  actionBtnExtend: {
+    backgroundColor: 'rgba(34,197,94,0.08)',
+    borderColor: 'rgba(34,197,94,0.3)',
+  },
+  actionBtnRevoke: {
+    backgroundColor: 'rgba(239,68,68,0.08)',
+    borderColor: 'rgba(239,68,68,0.3)',
+  },
+  actionBtnToggleOn: {
+    backgroundColor: 'rgba(34,197,94,0.08)',
+    borderColor: 'rgba(34,197,94,0.3)',
+  },
+  actionBtnToggleOff: {
+    backgroundColor: '#1e293b',
+    borderColor: '#334155',
+  },
 });

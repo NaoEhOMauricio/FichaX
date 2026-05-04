@@ -1,0 +1,75 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const ADMIN_EMAIL = 'leonardo.clemente.braga@gmail.com'
+
+const cors = {
+  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+
+  try {
+    const url    = Deno.env.get('SUPABASE_URL')!
+    const anon   = Deno.env.get('SUPABASE_ANON_KEY')!
+    const svcKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+    // 1. Verifica se é o admin
+    const caller = createClient(url, anon, {
+      global: { headers: { Authorization: req.headers.get('Authorization')! } }
+    })
+    const { data: { user } } = await caller.auth.getUser()
+    if (!user) return new Response(JSON.stringify({ error: 'Não autenticado' }), { status: 401, headers: cors })
+    if (user.email !== ADMIN_EMAIL) return new Response(JSON.stringify({ error: 'Acesso negado' }), { status: 403, headers: cors })
+
+    const body   = await req.json()
+    const action = body.action as string
+    const db     = createClient(url, svcKey)
+
+    // 2. Executa ação
+    if (action === 'activate_pro') {
+      const expires = new Date()
+      expires.setDate(expires.getDate() + 31)
+      await db.from('user_profiles').upsert({
+        id: body.user_id,
+        plan: 'pro',
+        expires_at: expires.toISOString(),
+      })
+
+    } else if (action === 'extend_pro') {
+      const { data: current } = await db.from('user_profiles').select('expires_at').eq('id', body.user_id).maybeSingle()
+      const base = current?.expires_at && new Date(current.expires_at) > new Date()
+        ? new Date(current.expires_at)
+        : new Date()
+      base.setDate(base.getDate() + (body.days ?? 31))
+      await db.from('user_profiles').upsert({ id: body.user_id, expires_at: base.toISOString() })
+
+    } else if (action === 'revoke_pro') {
+      await db.from('user_profiles')
+        .update({ plan: 'free', mesa: false, delivery: false, expires_at: null })
+        .eq('id', body.user_id)
+
+    } else if (action === 'toggle_mesa') {
+      await db.from('user_profiles')
+        .update({ mesa: body.value })
+        .eq('id', body.user_id)
+
+    } else if (action === 'toggle_delivery') {
+      await db.from('user_profiles')
+        .update({ delivery: body.value })
+        .eq('id', body.user_id)
+
+    } else {
+      return new Response(JSON.stringify({ error: 'Ação inválida' }), { status: 400, headers: cors })
+    }
+
+    return new Response(JSON.stringify({ ok: true }), {
+      headers: { ...cors, 'Content-Type': 'application/json' }
+    })
+
+  } catch (err) {
+    return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: cors })
+  }
+})
