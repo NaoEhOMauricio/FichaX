@@ -165,9 +165,9 @@ export default function Admin() {
         return;
       }
 
-      const json = data as { ok?: boolean; error?: string };
+      const json = data as { ok?: boolean; error?: string; message?: string };
       if (json.ok) {
-        setActionMsg({ text: 'Atualizado com sucesso!', ok: true });
+        setActionMsg({ text: json.message ?? 'Atualizado com sucesso!', ok: true });
         fetchData();
       } else {
         setActionMsg({ text: json.error ?? 'Erro desconhecido', ok: false });
@@ -222,6 +222,11 @@ export default function Admin() {
   const totalPro = users.filter(u => u.plan === 'pro').length;
   const totalRecipes = users.reduce((s, u) => s + u.recipe_count, 0);
   const totalIngredients = users.reduce((s, u) => s + u.ingredient_count, 0);
+
+  const isOnboardingIncomplete = (u: UserProfile) => {
+    const addr = u.address ?? {};
+    return !u.display_name || !u.phone || !u.cpf || !addr.rua || !addr.numero || !addr.bairro || !addr.cidade || !addr.estado;
+  };
 
   return (
     <View style={styles.container}>
@@ -346,6 +351,15 @@ export default function Admin() {
                 {/* Detalhes expandidos */}
                 {expanded && (
                   <View style={styles.expandedCard}>
+                    {isOnboardingIncomplete(user) && (
+                      <View style={styles.profilePendingBar}>
+                        <Ionicons name="alert-circle-outline" size={14} color="#f59e0b" />
+                        <Text style={styles.profilePendingBarText}>
+                          Cadastro incompleto: usuário ainda precisa concluir o onboarding.
+                        </Text>
+                      </View>
+                    )}
+
                     <View style={styles.expandedGrid}>
                       <View style={styles.expandedSection}>
                         <Text style={styles.expandedSectionTitle}>Dados pessoais</Text>
@@ -442,6 +456,19 @@ export default function Admin() {
                         <Ionicons name="bicycle-outline" size={13} color={user.delivery ? '#22c55e' : '#64748b'} />
                         <Text style={[styles.actionBtnText, { color: user.delivery ? '#22c55e' : '#64748b' }]}>
                           {actionLoading === user.id + 'toggle_delivery' ? '...' : `Delivery: ${user.delivery ? 'ON → OFF' : 'OFF → ON'}`}
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[styles.actionBtn, styles.actionBtnEmail]}
+                        onPress={() => adminAction('send_setup_email', user.id, { email: user.email })}
+                        disabled={actionLoading === user.id + 'send_setup_email' || !user.email}
+                      >
+                        <Ionicons name="mail-outline" size={13} color="#38bdf8" />
+                        <Text style={[styles.actionBtnText, { color: '#38bdf8' }]}> 
+                          {actionLoading === user.id + 'send_setup_email'
+                            ? '...'
+                            : (isOnboardingIncomplete(user) ? 'Enviar email para concluir cadastro' : 'Enviar email de acesso')}
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -624,6 +651,14 @@ const styles = StyleSheet.create({
   expandedGrid: { flexDirection: 'row', gap: 24 },
   expandedSection: { flex: 1, gap: 8 },
   expandedSectionTitle: { fontSize: 11, fontWeight: '700', color: '#6366f1', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
+  profilePendingBar: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginBottom: 12, paddingHorizontal: 10, paddingVertical: 8,
+    borderRadius: 8, borderWidth: 1,
+    borderColor: 'rgba(245,158,11,0.35)',
+    backgroundColor: 'rgba(245,158,11,0.12)',
+  },
+  profilePendingBarText: { fontSize: 12, color: '#fcd34d', fontWeight: '600' },
 
   detailRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   detailLabel: { fontSize: 12, color: '#64748b', width: 80, flexShrink: 0 },
@@ -684,5 +719,9 @@ const styles = StyleSheet.create({
   actionBtnToggleOff: {
     backgroundColor: '#1e293b',
     borderColor: '#334155',
+  },
+  actionBtnEmail: {
+    backgroundColor: 'rgba(56,189,248,0.08)',
+    borderColor: 'rgba(56,189,248,0.35)',
   },
 });

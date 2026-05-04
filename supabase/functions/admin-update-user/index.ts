@@ -61,6 +61,45 @@ serve(async (req) => {
         .update({ delivery: body.value })
         .eq('id', body.user_id)
 
+    } else if (action === 'send_setup_email') {
+      let targetEmail = (body.email as string | undefined)?.trim().toLowerCase()
+      const userId = body.user_id as string | undefined
+
+      if (!targetEmail && userId) {
+        const { data: profile } = await db
+          .from('profiles')
+          .select('email')
+          .eq('id', userId)
+          .maybeSingle()
+        targetEmail = profile?.email?.trim().toLowerCase()
+      }
+
+      if (!targetEmail) {
+        return new Response(JSON.stringify({ error: 'E-mail do usuário não encontrado' }), {
+          status: 400,
+          headers: { ...cors, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const redirectTo = Deno.env.get('APP_AUTH_REDIRECT_URL')
+      const resetResult = redirectTo
+        ? await db.auth.resetPasswordForEmail(targetEmail, { redirectTo })
+        : await db.auth.resetPasswordForEmail(targetEmail)
+
+      if (resetResult.error) {
+        return new Response(JSON.stringify({ error: resetResult.error.message }), {
+          status: 400,
+          headers: { ...cors, 'Content-Type': 'application/json' },
+        })
+      }
+
+      return new Response(JSON.stringify({
+        ok: true,
+        message: `E-mail enviado para ${targetEmail}.`,
+      }), {
+        headers: { ...cors, 'Content-Type': 'application/json' }
+      })
+
     } else {
       return new Response(JSON.stringify({ error: 'Ação inválida' }), { status: 400, headers: cors })
     }
