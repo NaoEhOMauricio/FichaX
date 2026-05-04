@@ -200,19 +200,21 @@ export default function Ingredients() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, isMobile && styles.headerMobile]}>
-        <View style={[styles.headerContent, isMobile && styles.headerContentMobile]}>
-          <View style={{ flex: 1 }}>
+        <View style={styles.headerContent}>
+          <View>
             <Text style={styles.title}>Ingredientes</Text>
             <Text style={styles.subtitle}>Gerencie seus ingredientes base</Text>
           </View>
-          <TouchableOpacity
-            style={[styles.addHeaderBtn, isMobile && styles.addHeaderBtnMobile]}
-            onPress={() => { setName(''); setCost(''); setPackageWeight(''); setPackageUnit('kg'); setShowAddModal(true); }}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="add" size={18} color="white" />
-            {!isMobile && <Text style={styles.addHeaderBtnText}>Novo ingrediente</Text>}
-          </TouchableOpacity>
+          {!isMobile && (
+            <TouchableOpacity
+              style={styles.addHeaderBtn}
+              onPress={() => { setName(''); setCost(''); setPackageWeight(''); setPackageUnit('kg'); setShowAddModal(true); }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add" size={18} color="white" />
+              <Text style={styles.addHeaderBtnText}>Novo ingrediente</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
       
@@ -300,6 +302,17 @@ export default function Ingredients() {
           )}
         </View>
       </ScrollView>
+
+      {/* FAB mobile */}
+      {isMobile && (
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => { setName(''); setCost(''); setPackageWeight(''); setPackageUnit('kg'); setShowAddModal(true); }}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="add" size={26} color="white" />
+        </TouchableOpacity>
+      )}
 
       {/* Modal Editar */}
       <Modal visible={showEditModal} transparent animationType="slide">
@@ -505,18 +518,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerContentMobile: {
-    alignItems: 'flex-start',
-  },
-  addHeaderBtnMobile: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
+  fab: {
+    position: 'absolute',
+    bottom: 88,
+    right: 20,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#6366f1',
     justifyContent: 'center',
     alignItems: 'center',
-    flexShrink: 0,
+    elevation: 8,
+    zIndex: 10,
   },
   title: {
     fontSize: 22,
