@@ -37,14 +37,14 @@ export default function Onboarding() {
 
   useEffect(() => {
     checkSession();
-    // Escuta mudança de auth (magic link dispara SIGNED_IN)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        if (session.user.user_metadata?.onboarding_complete) {
-          router.replace('/');
-        } else {
-          setChecking(false);
-        }
+    // Escuta SIGNED_IN do magic link
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        // Chegou via magic link — exibe o formulário independente de onboarding_complete
+        setChecking(false);
+      } else if (!session && event !== 'INITIAL_SESSION') {
+        // Sem sessão → vai pro login
+        router.replace('/auth');
       }
     });
     return () => subscription.unsubscribe();
@@ -52,17 +52,11 @@ export default function Onboarding() {
 
   const checkSession = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      // Sem sessão ainda — pode ser que o magic link ainda vai disparar o evento
-      // Aguarda o onAuthStateChange acima resolver
-      setChecking(false);
-      return;
-    }
-    if (session.user.user_metadata?.onboarding_complete) {
-      router.replace('/');
-    } else {
+    if (session) {
+      // Sessão ativa — exibe o formulário
       setChecking(false);
     }
+    // Se não há sessão, aguarda o onAuthStateChange processar o token do magic link
   };
 
   // ── Máscaras ──
