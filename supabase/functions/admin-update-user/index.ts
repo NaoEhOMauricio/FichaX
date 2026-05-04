@@ -27,6 +27,7 @@ serve(async (req) => {
     const body   = await req.json()
     const action = body.action as string
     const db     = createClient(url, svcKey)
+    const publicAuth = createClient(url, anon)
 
     // 2. Executa ação
     if (action === 'activate_pro') {
@@ -82,15 +83,21 @@ serve(async (req) => {
       }
 
       const redirectTo = Deno.env.get('APP_AUTH_REDIRECT_URL')
-      const resetResult = redirectTo
+      const resetWithService = redirectTo
         ? await db.auth.resetPasswordForEmail(targetEmail, { redirectTo })
         : await db.auth.resetPasswordForEmail(targetEmail)
 
-      if (resetResult.error) {
-        return new Response(JSON.stringify({ error: resetResult.error.message }), {
-          status: 400,
-          headers: { ...cors, 'Content-Type': 'application/json' },
-        })
+      if (resetWithService.error) {
+        const resetWithAnon = redirectTo
+          ? await publicAuth.auth.resetPasswordForEmail(targetEmail, { redirectTo })
+          : await publicAuth.auth.resetPasswordForEmail(targetEmail)
+
+        if (resetWithAnon.error) {
+          return new Response(JSON.stringify({ error: resetWithAnon.error.message }), {
+            status: 400,
+            headers: { ...cors, 'Content-Type': 'application/json' },
+          })
+        }
       }
 
       return new Response(JSON.stringify({

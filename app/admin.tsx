@@ -159,7 +159,15 @@ export default function Admin() {
       });
 
       if (error) {
-        setActionMsg({ text: error.message || 'Erro ao chamar função admin', ok: false });
+        let errText = error.message || 'Erro ao chamar função admin';
+        const errAny = error as any;
+        if (errAny?.context?.json) {
+          try {
+            const body = await errAny.context.json();
+            if (body?.error) errText = body.error;
+          } catch {}
+        }
+        setActionMsg({ text: errText, ok: false });
         setActionLoading(null);
         setTimeout(() => setActionMsg(null), 4000);
         return;
