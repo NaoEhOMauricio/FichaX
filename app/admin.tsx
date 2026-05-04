@@ -124,7 +124,7 @@ export default function Admin() {
           created_at: p.created_at ?? '',
           recipe_count: recipeCount[p.id] ?? 0,
           ingredient_count: ingCount[p.id] ?? 0,
-          plan: sub.plan ?? 'free',
+          plan: (sub.plan ?? 'free').toLowerCase(),
           mesa: sub.mesa ?? false,
           delivery: sub.delivery ?? false,
           expires_at: sub.expires_at ?? null,
