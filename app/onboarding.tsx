@@ -15,6 +15,7 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [success, setSuccess] = useState(false);
+  const [linkExpired, setLinkExpired] = useState(false);
 
   const [onboardName, setOnboardName] = useState('');
   const [onboardPhone, setOnboardPhone] = useState('');
@@ -37,27 +38,38 @@ export default function Onboarding() {
   };
 
   useEffect(() => {
-    checkSession();
+    // Timeout: se após 10s ainda não tiver sessão, mostra erro de link expirado
+    const timer = setTimeout(() => {
+      setChecking(prev => {
+        if (prev) setLinkExpired(true);
+        return false;
+      });
+    }, 10000);
+
+    checkSession(timer);
     // Escuta SIGNED_IN do magic link
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        // Chegou via magic link — exibe o formulário independente de onboarding_complete
+        clearTimeout(timer);
         setChecking(false);
       } else if (!session && event !== 'INITIAL_SESSION') {
-        // Sem sessão → vai pro login
+        clearTimeout(timer);
         router.replace('/auth');
       }
     });
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
-  const checkSession = async () => {
+  const checkSession = async (timer?: ReturnType<typeof setTimeout>) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
-      // Sessão ativa — exibe o formulário
+      if (timer) clearTimeout(timer);
       setChecking(false);
     }
-    // Se não há sessão, aguarda o onAuthStateChange processar o token do magic link
+    // Se não há sessão, aguarda onAuthStateChange processar o token do magic link
   };
 
   // ── Máscaras ──
@@ -162,6 +174,26 @@ export default function Onboarding() {
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color="#6366f1" />
         <Text style={{ color: '#94a3b8', marginTop: 16 }}>Verificando acesso...</Text>
+      </View>
+    );
+  }
+
+  if (linkExpired) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 32 }]}>
+        <View style={[styles.successBox, { borderColor: '#ef444433' }]}>
+          <Ionicons name="alert-circle" size={56} color="#ef4444" />
+          <Text style={[styles.successTitle, { color: '#f87171', marginTop: 12 }]}>Link expirado</Text>
+          <Text style={styles.successSubtitle}>
+            Este link de acesso expirou ou já foi utilizado.{'\n'}Solicite um novo link ao administrador.
+          </Text>
+          <TouchableOpacity
+            style={[styles.primaryBtn, { backgroundColor: '#6366f1', marginTop: 20, paddingHorizontal: 24 }]}
+            onPress={() => router.replace('/auth')}
+          >
+            <Text style={styles.primaryBtnText}>Ir para o login</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }

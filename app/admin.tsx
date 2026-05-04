@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
@@ -56,6 +56,8 @@ const StatCard = ({ icon, label, value, color }: { icon: string; label: string; 
 
 export default function Admin() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -267,14 +269,14 @@ export default function Admin() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, isMobile && styles.headerMobile]}>
         <View>
-          <Text style={styles.pageTitle}>Dashboard Admin</Text>
+          <Text style={[styles.pageTitle, isMobile && { fontSize: 18 }]}>Dashboard Admin</Text>
           <Text style={styles.pageSubtitle}>Visão geral dos usuários cadastrados</Text>
         </View>
         <TouchableOpacity style={styles.refreshBtn} onPress={fetchData} activeOpacity={0.7}>
           <Ionicons name="refresh-outline" size={18} color="#6366f1" />
-          <Text style={styles.refreshBtnText}>Atualizar</Text>
+          {!isMobile && <Text style={styles.refreshBtnText}>Atualizar</Text>}
         </TouchableOpacity>
       </View>
 
@@ -287,15 +289,15 @@ export default function Admin() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Stats */}
-        <View style={styles.statsRow}>
+        <View style={[styles.statsRow, isMobile && styles.statsRowMobile]}>
           <StatCard icon="people" label="Usuários" value={users.length} color="#6366f1" />
-          <StatCard icon="star" label="Usuários Pro" value={totalPro} color="#f59e0b" />
+          <StatCard icon="star" label="Pro" value={totalPro} color="#f59e0b" />
           <StatCard icon="restaurant" label="Receitas" value={totalRecipes} color="#22c55e" />
           <StatCard icon="leaf" label="Ingredientes" value={totalIngredients} color="#06b6d4" />
         </View>
 
         {/* Filtros */}
-        <View style={styles.filterRow}>
+        <View style={[styles.filterRow, isMobile && styles.filterRowMobile]}>
           <View style={styles.searchWrap}>
             <Ionicons name="search" size={16} color="#64748b" style={{ marginRight: 8 }} />
             <TextInput
@@ -326,15 +328,17 @@ export default function Admin() {
           </View>
         </View>
 
-        {/* Tabela header */}
-        <View style={styles.tableHeader}>
-          <Text style={[styles.th, { flex: 2 }]}>Usuário</Text>
-          <Text style={[styles.th, { width: 80, textAlign: 'center' }]}>Plano</Text>
-          <Text style={[styles.th, { width: 70, textAlign: 'center' }]}>Receitas</Text>
-          <Text style={[styles.th, { width: 80, textAlign: 'center' }]}>Ingredientes</Text>
-          <Text style={[styles.th, { width: 100, textAlign: 'right' }]}>Cadastro</Text>
-          <Text style={[styles.th, { width: 40 }]}> </Text>
-        </View>
+        {/* Tabela header — apenas desktop */}
+        {!isMobile && (
+          <View style={styles.tableHeader}>
+            <Text style={[styles.th, { flex: 2 }]}>Usuário</Text>
+            <Text style={[styles.th, { width: 80, textAlign: 'center' }]}>Plano</Text>
+            <Text style={[styles.th, { width: 70, textAlign: 'center' }]}>Receitas</Text>
+            <Text style={[styles.th, { width: 80, textAlign: 'center' }]}>Ingredientes</Text>
+            <Text style={[styles.th, { width: 100, textAlign: 'right' }]}>Cadastro</Text>
+            <Text style={[styles.th, { width: 40 }]}> </Text>
+          </View>
+        )}
 
         {loading ? (
           <View style={styles.centered}><ActivityIndicator color="#6366f1" size="large" /></View>
@@ -347,6 +351,126 @@ export default function Admin() {
           filtered.map(user => {
             const expanded = expandedId === user.id;
             const initials = (user.display_name || user.email || '?').slice(0, 2).toUpperCase();
+
+            if (isMobile) {
+              // ── CARD MOBILE ──
+              return (
+                <View key={user.id} style={styles.mobileCard}>
+                  <TouchableOpacity
+                    style={styles.mobileCardHeader}
+                    onPress={() => setExpandedId(expanded ? null : user.id)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.avatar}>
+                      <Text style={styles.avatarText}>{initials}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <Text style={styles.userName} numberOfLines={1}>{user.display_name || 'Sem nome'}</Text>
+                        <PlanBadge plan={user.plan} />
+                      </View>
+                      <Text style={styles.userEmail} numberOfLines={1}>{user.email}</Text>
+                      <Text style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>
+                        📅 {formatDate(user.created_at)} · 🍽 {user.recipe_count} · 🌿 {user.ingredient_count}
+                      </Text>
+                    </View>
+                    <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color="#475569" />
+                  </TouchableOpacity>
+
+                  {expanded && (
+                    <View style={styles.expandedCard}>
+                      {isOnboardingIncomplete(user) && (
+                        <View style={styles.profilePendingBar}>
+                          <Ionicons name="alert-circle-outline" size={14} color="#f59e0b" />
+                          <Text style={styles.profilePendingBarText}>Cadastro incompleto</Text>
+                        </View>
+                      )}
+
+                      <View style={{ gap: 12 }}>
+                        <View style={styles.expandedSection}>
+                          <Text style={styles.expandedSectionTitle}>Dados pessoais</Text>
+                          <DetailRow icon="mail-outline" label="Email" value={user.email || '—'} />
+                          <DetailRow icon="call-outline" label="Telefone" value={user.phone || '—'} />
+                          <DetailRow icon="card-outline" label="CPF" value={user.cpf || '—'} />
+                          {user.address?.rua ? (
+                            <DetailRow icon="location-outline" label="Endereço" value={`${user.address.rua}, ${user.address.numero} · ${user.address.bairro} · ${user.address.cidade}/${user.address.estado}`} />
+                          ) : (
+                            <DetailRow icon="location-outline" label="Endereço" value="Não informado" />
+                          )}
+                        </View>
+
+                        <View style={styles.expandedSection}>
+                          <Text style={styles.expandedSectionTitle}>Assinatura</Text>
+                          <DetailRow icon="star-outline" label="Plano" value={user.plan.toUpperCase()} highlight={user.plan === 'pro'} />
+                          <DetailRow icon="storefront-outline" label="Mesa" value={user.mesa ? 'Ativo' : 'Inativo'} highlight={user.mesa} />
+                          <DetailRow icon="bicycle-outline" label="Delivery" value={user.delivery ? 'Ativo' : 'Inativo'} highlight={user.delivery} />
+                          {user.expires_at && <DetailRow icon="calendar-outline" label="Expira" value={formatDateTime(user.expires_at)} />}
+                        </View>
+                      </View>
+
+                      <View style={styles.actionRow}>
+                        {user.plan !== 'pro' ? (
+                          <TouchableOpacity style={[styles.actionBtn, styles.actionBtnPro, { flex: 1 }]}
+                            onPress={() => adminAction('activate_pro', user.id)}
+                            disabled={actionLoading === user.id + 'activate_pro'}>
+                            <Ionicons name="star" size={13} color="white" />
+                            <Text style={[styles.actionBtnText, { color: 'white' }]}>{actionLoading === user.id + 'activate_pro' ? '...' : 'Ativar Pro'}</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <>
+                            <TouchableOpacity style={[styles.actionBtn, styles.actionBtnExtend, { flex: 1 }]}
+                              onPress={() => adminAction('extend_pro', user.id, { days: 31 })}
+                              disabled={actionLoading === user.id + 'extend_pro'}>
+                              <Ionicons name="add-circle-outline" size={13} color="#22c55e" />
+                              <Text style={[styles.actionBtnText, { color: '#22c55e' }]}>{actionLoading === user.id + 'extend_pro' ? '...' : '+31 dias'}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.actionBtn, styles.actionBtnRevoke, { flex: 1 }]}
+                              onPress={() => adminAction('revoke_pro', user.id)}
+                              disabled={actionLoading === user.id + 'revoke_pro'}>
+                              <Ionicons name="close-circle-outline" size={13} color="#ef4444" />
+                              <Text style={[styles.actionBtnText, { color: '#ef4444' }]}>{actionLoading === user.id + 'revoke_pro' ? '...' : 'Revogar'}</Text>
+                            </TouchableOpacity>
+                          </>
+                        )}
+                      </View>
+
+                      <View style={[styles.actionRow, { borderTopWidth: 0, paddingTop: 4 }]}>
+                        <TouchableOpacity style={[styles.actionBtn, user.mesa ? styles.actionBtnToggleOn : styles.actionBtnToggleOff, { flex: 1 }]}
+                          onPress={() => adminAction('toggle_mesa', user.id, { value: !user.mesa })}
+                          disabled={actionLoading === user.id + 'toggle_mesa'}>
+                          <Ionicons name="storefront-outline" size={13} color={user.mesa ? '#22c55e' : '#64748b'} />
+                          <Text style={[styles.actionBtnText, { color: user.mesa ? '#22c55e' : '#64748b' }]}>
+                            {actionLoading === user.id + 'toggle_mesa' ? '...' : `Mesa ${user.mesa ? 'ON' : 'OFF'}`}
+                          </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={[styles.actionBtn, user.delivery ? styles.actionBtnToggleOn : styles.actionBtnToggleOff, { flex: 1 }]}
+                          onPress={() => adminAction('toggle_delivery', user.id, { value: !user.delivery })}
+                          disabled={actionLoading === user.id + 'toggle_delivery'}>
+                          <Ionicons name="bicycle-outline" size={13} color={user.delivery ? '#22c55e' : '#64748b'} />
+                          <Text style={[styles.actionBtnText, { color: user.delivery ? '#22c55e' : '#64748b' }]}>
+                            {actionLoading === user.id + 'toggle_delivery' ? '...' : `Delivery ${user.delivery ? 'ON' : 'OFF'}`}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <TouchableOpacity
+                        style={[styles.actionBtn, styles.actionBtnEmail, { alignSelf: 'stretch', justifyContent: 'center', marginTop: 4 }]}
+                        onPress={() => adminAction('send_setup_email', user.id, { email: user.email })}
+                        disabled={actionLoading === user.id + 'send_setup_email' || !user.email || !!getCooldownLabel(user.id)}
+                      >
+                        <Ionicons name="mail-outline" size={13} color="#38bdf8" />
+                        <Text style={[styles.actionBtnText, { color: '#38bdf8' }]}>
+                          {actionLoading === user.id + 'send_setup_email' ? '...' : (getCooldownLabel(user.id) ?? 'Enviar link de acesso')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              );
+            }
+
+            // ── LINHA DESKTOP ──
             return (
               <View key={user.id}>
                 <TouchableOpacity
@@ -354,48 +478,34 @@ export default function Admin() {
                   onPress={() => setExpandedId(expanded ? null : user.id)}
                   activeOpacity={0.8}
                 >
-                  {/* Usuário */}
                   <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <View style={styles.avatar}>
                       <Text style={styles.avatarText}>{initials}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.userName} numberOfLines={1}>
-                        {user.display_name || 'Sem nome'}
-                      </Text>
+                      <Text style={styles.userName} numberOfLines={1}>{user.display_name || 'Sem nome'}</Text>
                       <Text style={styles.userEmail} numberOfLines={1}>{user.email}</Text>
                     </View>
                   </View>
-                  {/* Plano */}
                   <View style={{ width: 80, alignItems: 'center' }}>
                     <PlanBadge plan={user.plan} />
                   </View>
-                  {/* Receitas */}
                   <Text style={[styles.td, { width: 70, textAlign: 'center' }]}>{user.recipe_count}</Text>
-                  {/* Ingredientes */}
                   <Text style={[styles.td, { width: 80, textAlign: 'center' }]}>{user.ingredient_count}</Text>
-                  {/* Cadastro */}
-                  <Text style={[styles.td, { width: 100, textAlign: 'right', fontSize: 11 }]}>
-                    {formatDate(user.created_at)}
-                  </Text>
-                  {/* Chevron */}
+                  <Text style={[styles.td, { width: 100, textAlign: 'right', fontSize: 11 }]}>{formatDate(user.created_at)}</Text>
                   <View style={{ width: 40, alignItems: 'center' }}>
                     <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color="#475569" />
                   </View>
                 </TouchableOpacity>
 
-                {/* Detalhes expandidos */}
                 {expanded && (
                   <View style={styles.expandedCard}>
                     {isOnboardingIncomplete(user) && (
                       <View style={styles.profilePendingBar}>
                         <Ionicons name="alert-circle-outline" size={14} color="#f59e0b" />
-                        <Text style={styles.profilePendingBarText}>
-                          Cadastro incompleto: usuário ainda precisa concluir o onboarding.
-                        </Text>
+                        <Text style={styles.profilePendingBarText}>Cadastro incompleto: usuário ainda precisa concluir o onboarding.</Text>
                       </View>
                     )}
-
                     <View style={styles.expandedGrid}>
                       <View style={styles.expandedSection}>
                         <Text style={styles.expandedSectionTitle}>Dados pessoais</Text>
@@ -403,29 +513,19 @@ export default function Admin() {
                         <DetailRow icon="call-outline" label="Telefone" value={user.phone || '—'} />
                         <DetailRow icon="card-outline" label="CPF" value={user.cpf || '—'} />
                         {user.address?.rua ? (
-                          <DetailRow
-                            icon="location-outline"
-                            label="Endereço"
-                            value={`${user.address.rua}, ${user.address.numero}${user.address.complemento ? ` - ${user.address.complemento}` : ''} · ${user.address.bairro} · ${user.address.cidade}/${user.address.estado} · CEP ${user.address.cep}`}
-                          />
+                          <DetailRow icon="location-outline" label="Endereço" value={`${user.address.rua}, ${user.address.numero}${user.address.complemento ? ` - ${user.address.complemento}` : ''} · ${user.address.bairro} · ${user.address.cidade}/${user.address.estado} · CEP ${user.address.cep}`} />
                         ) : (
                           <DetailRow icon="location-outline" label="Endereço" value="Não informado" />
                         )}
                       </View>
-
                       <View style={styles.expandedSection}>
                         <Text style={styles.expandedSectionTitle}>Assinatura</Text>
                         <DetailRow icon="star-outline" label="Plano" value={user.plan.toUpperCase()} highlight={user.plan === 'pro'} />
                         <DetailRow icon="storefront-outline" label="Add-on Mesa" value={user.mesa ? 'Ativo' : 'Inativo'} highlight={user.mesa} />
                         <DetailRow icon="bicycle-outline" label="Add-on Delivery" value={user.delivery ? 'Ativo' : 'Inativo'} highlight={user.delivery} />
-                        {user.expires_at && (
-                          <DetailRow icon="calendar-outline" label="Expira em" value={formatDateTime(user.expires_at)} />
-                        )}
-                        {user.trial_ends_at && (
-                          <DetailRow icon="hourglass-outline" label="Trial até" value={formatDateTime(user.trial_ends_at)} />
-                        )}
+                        {user.expires_at && <DetailRow icon="calendar-outline" label="Expira em" value={formatDateTime(user.expires_at)} />}
+                        {user.trial_ends_at && <DetailRow icon="hourglass-outline" label="Trial até" value={formatDateTime(user.trial_ends_at)} />}
                       </View>
-
                       <View style={styles.expandedSection}>
                         <Text style={styles.expandedSectionTitle}>Uso do app</Text>
                         <DetailRow icon="restaurant-outline" label="Receitas criadas" value={String(user.recipe_count)} />
@@ -434,77 +534,48 @@ export default function Admin() {
                         <DetailRow icon="finger-print-outline" label="ID" value={user.id.slice(0, 16) + '...'} mono />
                       </View>
                     </View>
-
-                    {/* Ações de assinatura */}
                     <View style={styles.actionRow}>
                       {user.plan !== 'pro' ? (
-                        <TouchableOpacity
-                          style={[styles.actionBtn, styles.actionBtnPro]}
+                        <TouchableOpacity style={[styles.actionBtn, styles.actionBtnPro]}
                           onPress={() => adminAction('activate_pro', user.id)}
-                          disabled={actionLoading === user.id + 'activate_pro'}
-                        >
+                          disabled={actionLoading === user.id + 'activate_pro'}>
                           <Ionicons name="star" size={13} color="white" />
-                          <Text style={styles.actionBtnText}>
-                            {actionLoading === user.id + 'activate_pro' ? '...' : 'Ativar Pro (31d)'}
-                          </Text>
+                          <Text style={styles.actionBtnText}>{actionLoading === user.id + 'activate_pro' ? '...' : 'Ativar Pro (31d)'}</Text>
                         </TouchableOpacity>
                       ) : (
                         <>
-                          <TouchableOpacity
-                            style={[styles.actionBtn, styles.actionBtnExtend]}
+                          <TouchableOpacity style={[styles.actionBtn, styles.actionBtnExtend]}
                             onPress={() => adminAction('extend_pro', user.id, { days: 31 })}
-                            disabled={actionLoading === user.id + 'extend_pro'}
-                          >
+                            disabled={actionLoading === user.id + 'extend_pro'}>
                             <Ionicons name="add-circle-outline" size={13} color="#22c55e" />
-                            <Text style={[styles.actionBtnText, { color: '#22c55e' }]}>
-                              {actionLoading === user.id + 'extend_pro' ? '...' : '+31 dias'}
-                            </Text>
+                            <Text style={[styles.actionBtnText, { color: '#22c55e' }]}>{actionLoading === user.id + 'extend_pro' ? '...' : '+31 dias'}</Text>
                           </TouchableOpacity>
-                          <TouchableOpacity
-                            style={[styles.actionBtn, styles.actionBtnRevoke]}
+                          <TouchableOpacity style={[styles.actionBtn, styles.actionBtnRevoke]}
                             onPress={() => adminAction('revoke_pro', user.id)}
-                            disabled={actionLoading === user.id + 'revoke_pro'}
-                          >
+                            disabled={actionLoading === user.id + 'revoke_pro'}>
                             <Ionicons name="close-circle-outline" size={13} color="#ef4444" />
-                            <Text style={[styles.actionBtnText, { color: '#ef4444' }]}>
-                              {actionLoading === user.id + 'revoke_pro' ? '...' : 'Revogar Pro'}
-                            </Text>
+                            <Text style={[styles.actionBtnText, { color: '#ef4444' }]}>{actionLoading === user.id + 'revoke_pro' ? '...' : 'Revogar Pro'}</Text>
                           </TouchableOpacity>
                         </>
                       )}
-
-                      <TouchableOpacity
-                        style={[styles.actionBtn, user.mesa ? styles.actionBtnToggleOn : styles.actionBtnToggleOff]}
+                      <TouchableOpacity style={[styles.actionBtn, user.mesa ? styles.actionBtnToggleOn : styles.actionBtnToggleOff]}
                         onPress={() => adminAction('toggle_mesa', user.id, { value: !user.mesa })}
-                        disabled={actionLoading === user.id + 'toggle_mesa'}
-                      >
+                        disabled={actionLoading === user.id + 'toggle_mesa'}>
                         <Ionicons name="storefront-outline" size={13} color={user.mesa ? '#22c55e' : '#64748b'} />
-                        <Text style={[styles.actionBtnText, { color: user.mesa ? '#22c55e' : '#64748b' }]}>
-                          {actionLoading === user.id + 'toggle_mesa' ? '...' : `Mesa: ${user.mesa ? 'ON → OFF' : 'OFF → ON'}`}
-                        </Text>
+                        <Text style={[styles.actionBtnText, { color: user.mesa ? '#22c55e' : '#64748b' }]}>{actionLoading === user.id + 'toggle_mesa' ? '...' : `Mesa: ${user.mesa ? 'ON → OFF' : 'OFF → ON'}`}</Text>
                       </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[styles.actionBtn, user.delivery ? styles.actionBtnToggleOn : styles.actionBtnToggleOff]}
+                      <TouchableOpacity style={[styles.actionBtn, user.delivery ? styles.actionBtnToggleOn : styles.actionBtnToggleOff]}
                         onPress={() => adminAction('toggle_delivery', user.id, { value: !user.delivery })}
-                        disabled={actionLoading === user.id + 'toggle_delivery'}
-                      >
+                        disabled={actionLoading === user.id + 'toggle_delivery'}>
                         <Ionicons name="bicycle-outline" size={13} color={user.delivery ? '#22c55e' : '#64748b'} />
-                        <Text style={[styles.actionBtnText, { color: user.delivery ? '#22c55e' : '#64748b' }]}>
-                          {actionLoading === user.id + 'toggle_delivery' ? '...' : `Delivery: ${user.delivery ? 'ON → OFF' : 'OFF → ON'}`}
-                        </Text>
+                        <Text style={[styles.actionBtnText, { color: user.delivery ? '#22c55e' : '#64748b' }]}>{actionLoading === user.id + 'toggle_delivery' ? '...' : `Delivery: ${user.delivery ? 'ON → OFF' : 'OFF → ON'}`}</Text>
                       </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[styles.actionBtn, styles.actionBtnEmail]}
+                      <TouchableOpacity style={[styles.actionBtn, styles.actionBtnEmail]}
                         onPress={() => adminAction('send_setup_email', user.id, { email: user.email })}
-                        disabled={actionLoading === user.id + 'send_setup_email' || !user.email || !!getCooldownLabel(user.id)}
-                      >
+                        disabled={actionLoading === user.id + 'send_setup_email' || !user.email || !!getCooldownLabel(user.id)}>
                         <Ionicons name="mail-outline" size={13} color="#38bdf8" />
-                        <Text style={[styles.actionBtnText, { color: '#38bdf8' }]}> 
-                          {actionLoading === user.id + 'send_setup_email'
-                            ? '...'
-                            : (getCooldownLabel(user.id) ?? (isOnboardingIncomplete(user) ? 'Enviar email para concluir cadastro' : 'Enviar email de acesso'))}
+                        <Text style={[styles.actionBtnText, { color: '#38bdf8' }]}>
+                          {actionLoading === user.id + 'send_setup_email' ? '...' : (getCooldownLabel(user.id) ?? (isOnboardingIncomplete(user) ? 'Enviar email para concluir cadastro' : 'Enviar email de acesso'))}
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -621,6 +692,9 @@ const styles = StyleSheet.create({
     paddingTop: 28, paddingHorizontal: 28, paddingBottom: 20,
     borderBottomWidth: 1, borderBottomColor: '#1e293b',
   },
+  headerMobile: {
+    paddingTop: 16, paddingHorizontal: 16, paddingBottom: 14,
+  },
   pageTitle: { fontSize: 22, fontWeight: '700', color: '#f1f5f9' },
   pageSubtitle: { fontSize: 13, color: '#64748b', marginTop: 2 },
   refreshBtn: {
@@ -631,6 +705,7 @@ const styles = StyleSheet.create({
   refreshBtnText: { fontSize: 13, fontWeight: '600', color: '#6366f1' },
 
   statsRow: { flexDirection: 'row', gap: 14, padding: 24, paddingBottom: 0 },
+  statsRowMobile: { flexWrap: 'wrap', padding: 12, gap: 10 },
   statCard: {
     flex: 1, backgroundColor: '#1e293b', borderRadius: 12,
     padding: 16, borderTopWidth: 3, borderWidth: 1, borderColor: '#334155', gap: 6,
@@ -640,6 +715,7 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 12, color: '#64748b', fontWeight: '600' },
 
   filterRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 24, paddingVertical: 16 },
+  filterRowMobile: { flexDirection: 'column', paddingHorizontal: 12, paddingVertical: 12, gap: 10 },
   searchWrap: {
     flex: 1, flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#1e293b', borderRadius: 8, borderWidth: 1,
@@ -703,6 +779,17 @@ const styles = StyleSheet.create({
 
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 10 },
   emptyText: { fontSize: 15, color: '#475569', fontWeight: '600' },
+
+  mobileCard: {
+    backgroundColor: '#1e293b',
+    marginHorizontal: 12, marginBottom: 10,
+    borderRadius: 12, borderWidth: 1, borderColor: '#334155',
+    overflow: 'hidden',
+  },
+  mobileCardHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    padding: 14,
+  },
 
   deniedTitle: { fontSize: 20, fontWeight: '700', color: '#f1f5f9' },
   deniedSub: { fontSize: 14, color: '#64748b' },
