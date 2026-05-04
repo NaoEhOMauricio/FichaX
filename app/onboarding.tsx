@@ -14,6 +14,7 @@ export default function Onboarding() {
 
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [success, setSuccess] = useState(false);
 
   const [onboardName, setOnboardName] = useState('');
   const [onboardPhone, setOnboardPhone] = useState('');
@@ -151,9 +152,8 @@ export default function Onboarding() {
     if (error) {
       Alert.alert('Erro', error.message);
     } else {
-      Alert.alert('Bem-vindo! 🎉', 'Seu cadastro foi concluído com sucesso.', [
-        { text: 'OK', onPress: () => router.replace('/') },
-      ]);
+      setSuccess(true);
+      setTimeout(() => router.replace('/'), 2500);
     }
   };
 
@@ -162,6 +162,21 @@ export default function Onboarding() {
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color="#6366f1" />
         <Text style={{ color: '#94a3b8', marginTop: 16 }}>Verificando acesso...</Text>
+      </View>
+    );
+  }
+
+  if (success) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 32 }]}>
+        <View style={styles.successBox}>
+          <View style={styles.successIcon}>
+            <Ionicons name="checkmark-circle" size={56} color="#22c55e" />
+          </View>
+          <Text style={styles.successTitle}>Cadastro concluído! 🎉</Text>
+          <Text style={styles.successSubtitle}>Seus dados foram salvos com sucesso.{`\n`}Redirecionando para o início...</Text>
+          <ActivityIndicator color="#22c55e" style={{ marginTop: 20 }} />
+        </View>
       </View>
     );
   }
@@ -491,5 +506,31 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '700',
+  },
+  successBox: {
+    backgroundColor: '#1e293b',
+    borderRadius: 20,
+    padding: 40,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: '#22c55e33',
+  },
+  successIcon: {
+    marginBottom: 16,
+  },
+  successTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#f1f5f9',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  successSubtitle: {
+    fontSize: 14,
+    color: '#94a3b8',
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });
