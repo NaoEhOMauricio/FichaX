@@ -34,26 +34,6 @@ const UNIT_GROUPS: { category: UnitCategory; label: string; icon: string; units:
   { category: 'unidade', label: 'Unidade', icon: 'cube-outline',   units: ['un'] },
 ];
 
-// Normaliza unidade para o formato do dict (case-insensitive)
-const normalizeUnit = (unit: string): string => {
-  if (!unit) return 'g';
-  const lower = unit.toLowerCase();
-  if (lower === 'l') return 'L';
-  if (lower === 'ml') return 'ml';
-  if (lower === 'kg') return 'kg';
-  if (lower === 'g') return 'g';
-  if (lower === 'un' || lower === 'unidade' || lower === 'unidades') return 'un';
-  return unit;
-};
-
-// Função para converter unidades
-const convertToBase = (value: number, unit: string): number => {
-  return value * (UNITS[normalizeUnit(unit)]?.toBase || 1);
-};
-
-const getUnitCategory = (unit: string): UnitCategory => {
-  return UNITS[normalizeUnit(unit)]?.category || 'peso';
-};
 
 const formatCurrency = (value: number): string => {
   return `R$ ${value.toFixed(2).replace('.', ',')}`;
@@ -74,7 +54,6 @@ export default function Ingredients() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -217,11 +196,6 @@ export default function Ingredients() {
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchIngredients();
-    setRefreshing(false);
-  };
 
   return (
     <View style={styles.container}>
@@ -271,7 +245,7 @@ export default function Ingredients() {
         </View>
       </View>
       
-      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={[styles.scrollContent, { backgroundColor: '#0f172a' }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Seção Lista */}
         <View style={styles.section}>
           <View style={styles.listHeader}>
@@ -291,9 +265,9 @@ export default function Ingredients() {
             <View>
               {filteredIngredients.map((item) => {
                 return (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     key={item.id.toString()}
-                    style={styles.item}
+                    style={[styles.item, isMobile && styles.itemMobile]}
                     onPress={() => openEditModal(item)}
                   >
                     <View style={styles.itemContent}>
@@ -535,13 +509,14 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   addHeaderBtnMobile: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     paddingHorizontal: 0,
+    paddingVertical: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 4,
+    flexShrink: 0,
   },
   title: {
     fontSize: 22,
@@ -709,7 +684,7 @@ const styles = StyleSheet.create({
   },
   item: {
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 8,
     marginHorizontal: 20,
     backgroundColor: '#1e293b',
     borderRadius: 14,
@@ -718,13 +693,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4,
     borderWidth: 1,
     borderColor: '#334155',
+  },
+  itemMobile: {
+    marginHorizontal: 8,
+    padding: 12,
   },
   itemContent: {
     flex: 1,
