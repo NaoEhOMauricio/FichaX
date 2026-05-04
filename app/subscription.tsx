@@ -1,23 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, Alert,
-  ActivityIndicator, ScrollView,
-} from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
 
-type Product = 'pro' | 'mesa' | 'delivery';
+const FLUXOX_URL = 'https://fluxox.carrd.co/';
 
-interface UserProfile {
-  plan: string;
-  mesa: boolean;
-  delivery: boolean;
-  expires_at: string | null;
-  trial_ends_at: string | null;
-  mesa_expires_at: string | null;
-  delivery_expires_at: string | null;
+const FEATURES = [
+  { icon: 'restaurant-outline',   color: '#6366f1', text: 'Fichas técnicas ilimitadas' },
+  { icon: 'calculator-outline',   color: '#6366f1', text: 'Cálculo automático de custos e markup' },
+  { icon: 'leaf-outline',         color: '#22c55e', text: 'Gestão completa de ingredientes' },
+  { icon: 'document-text-outline',color: '#f59e0b', text: 'Exportação de PDF profissional' },
+  { icon: 'storefront-outline',   color: '#22c55e', text: 'Add-on Mesas — comandas por mesa' },
+  { icon: 'bicycle-outline',      color: '#06b6d4', text: 'Add-on Delivery — pipeline de pedidos' },
+  { icon: 'bar-chart-outline',    color: '#a78bfa', text: 'Relatórios e backup de dados' },
+  { icon: 'headset-outline',      color: '#f59e0b', text: 'Suporte prioritário' },
+];
+
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('pt-BR');
 }
 
 function daysLeft(dateStr: string | null): number {
@@ -26,55 +27,36 @@ function daysLeft(dateStr: string | null): number {
   return Math.max(0, Math.ceil(ms / 86_400_000));
 }
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('pt-BR');
-}
-
 export default function Subscription() {
-  const router = useRouter();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
+
+  const [plan, setPlan] = useState<string>('free');
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [paying, setPaying] = useState<Product | null>(null);
 
-  useEffect(() => { loadProfile(); }, []);
-
-  const loadProfile = async () => {
-    setLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { router.replace('/auth'); return; }
-    const { data } = await supabase
-      .from('user_profiles')
-      .select('plan, mesa, delivery, expires_at, trial_ends_at, mesa_expires_at, delivery_expires_at')
-      .eq('id', session.user.id)
-      .maybeSingle();
-    setProfile(data ?? null);
-    setLoading(false);
-  };
-
-  const handleSubscribe = async (product: Product) => {
-    setPaying(product);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-payment', {
-        method: 'POST',
-        body: { product },
-      });
-      if (error || !data?.init_point) {
-        Alert.alert('Erro', data?.error || 'Não foi possível iniciar o pagamento.');
-        return;
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setLoading(false); return; }
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('plan, expires_at')
+        .eq('id', session.user.id)
+        .maybeSingle();
+      if (data) {
+        setPlan(data.plan ?? 'free');
+        setExpiresAt(data.expires_at ?? null);
       }
-      await WebBrowser.openBrowserAsync(data.init_point, {
-        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-        showTitle: false,
-      });
-      // Recarrega perfil após retornar do checkout
-      await loadProfile();
-    } catch {
-      Alert.alert('Erro', 'Verifique sua conexão e tente novamente.');
-    } finally {
-      setPaying(null);
-    }
-  };
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const isPro = plan === 'pro';
+  const days  = daysLeft(expiresAt);
+
+  const openFluxoX = () => window.open(FLUXOX_URL, '_blank');
 
   if (loading) {
     return (
@@ -84,177 +66,91 @@ export default function Subscription() {
     );
   }
 
-  const isPro          = profile?.plan === 'pro';
-  const trial          = daysLeft(profile?.trial_ends_at ?? null);
-  const proExpiring    = isPro ? daysLeft(profile?.expires_at ?? null) : 0;
-  const isMesaActive   = profile?.mesa === true && daysLeft(profile?.mesa_expires_at ?? null) > 0;
-  const isDelivActive  = profile?.delivery === true && daysLeft(profile?.delivery_expires_at ?? null) > 0;
-
   return (
     <View style={styles.container}>
-
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={22} color="#94a3b8" />
-        </TouchableOpacity>
+      <View style={[styles.header, isMobile && styles.headerMobile]}>
         <View>
-          <Text style={styles.headerTitle}>Assinatura</Text>
-          <Text style={styles.headerSub}>FluxoX Pro</Text>
+          <Text style={styles.pageTitle}>Planos</Text>
+          <Text style={styles.pageSubtitle}>Gerencie sua assinatura pelo FluxoX</Text>
         </View>
-        <View style={[styles.headerBadge, isPro ? styles.headerBadgePro : styles.headerBadgeFree]}>
-          <Text style={styles.headerBadgeText}>{isPro ? 'PRO' : 'FREE'}</Text>
+        <View style={[styles.planBadge, isPro ? styles.planBadgePro : styles.planBadgeFree]}>
+          <Ionicons name={isPro ? 'star' : 'star-outline'} size={12} color={isPro ? '#f59e0b' : '#64748b'} />
+          <Text style={[styles.planBadgeText, isPro ? styles.planBadgeTextPro : styles.planBadgeTextFree]}>
+            {isPro ? 'PRO' : 'FREE'}
+          </Text>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, isMobile && styles.contentMobile]}>
 
-        {/* Status do plano Pro */}
-        <View style={[styles.statusCard, isPro ? styles.statusCardPro : styles.statusCardFree]}>
-          <View style={styles.statusIconWrap}>
-            <Ionicons
-              name={isPro ? 'checkmark-circle' : trial > 0 ? 'hourglass-outline' : 'lock-closed-outline'}
-              size={28}
-              color={isPro ? '#22c55e' : trial > 0 ? '#f59e0b' : '#ef4444'}
-            />
-          </View>
+        {/* Status atual */}
+        <View style={[styles.statusCard, isPro ? styles.statusPro : styles.statusFree]}>
+          <Ionicons
+            name={isPro ? 'checkmark-circle' : 'information-circle-outline'}
+            size={22}
+            color={isPro ? '#22c55e' : '#f59e0b'}
+          />
           <View style={{ flex: 1 }}>
-            <Text style={styles.statusPlan}>
-              {isPro ? 'Plano Pro ativo' : trial > 0 ? `Trial — ${trial} dias restantes` : 'Trial expirado'}
+            <Text style={styles.statusTitle}>
+              {isPro ? 'Plano Pro ativo' : 'Plano gratuito'}
             </Text>
-            {isPro && profile?.expires_at && (
-              <Text style={styles.statusSub}>
-                Válido até {formatDate(profile.expires_at)}
-                {proExpiring > 0 && proExpiring <= 7 &&
-                  <Text style={{ color: '#f59e0b' }}> · renova em {proExpiring}d</Text>}
-              </Text>
-            )}
-            {!isPro && trial > 0 && (
-              <Text style={styles.statusSub}>Expira em {formatDate(profile?.trial_ends_at ?? null)}</Text>
-            )}
-            {!isPro && trial === 0 && (
-              <Text style={[styles.statusSub, { color: '#ef4444' }]}>Assine para continuar usando</Text>
-            )}
+            <Text style={styles.statusSub}>
+              {isPro
+                ? `Válido até ${formatDate(expiresAt)}${days <= 7 ? ` · renova em ${days} dias` : ''}`
+                : 'Assine o Pro para acesso completo ao FichaX e FluxoX'}
+            </Text>
           </View>
         </View>
 
-        {/* ── Plano Pro ── */}
-        <Text style={styles.sectionTitle}>Plano base</Text>
-        <View style={styles.productCard}>
-          <View style={styles.productHeader}>
-            <View style={[styles.productIconWrap, { backgroundColor: 'rgba(99,102,241,0.15)' }]}>
-              <Ionicons name="flash-outline" size={20} color="#6366f1" />
+        {/* Card FluxoX */}
+        <View style={styles.fluxoxCard}>
+          {/* Topo colorido */}
+          <View style={styles.fluxoxCardTop}>
+            <View style={styles.fluxoxLogoWrap}>
+              <Text style={styles.fluxoxLogo}>Fluxo<Text style={{ color: '#FF9500' }}>X</Text></Text>
+              <View style={styles.proBadge}>
+                <Text style={styles.proBadgeText}>PRO</Text>
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.productName}>FluxoX Pro</Text>
-              <Text style={styles.productDesc}>Acesso completo ao sistema</Text>
-            </View>
-            <View style={styles.priceWrap}>
-              <Text style={styles.priceVal}>R$ 29<Text style={styles.priceCents}>,90</Text></Text>
-              <Text style={styles.pricePer}>/mês</Text>
-            </View>
+            <Text style={styles.fluxoxTagline}>Sistema completo de gestão gastronômica</Text>
           </View>
 
-          {isPro ? (
-            proExpiring > 0 && proExpiring <= 7 ? (
-              <BuyButton label="Renovar Pro" loading={paying === 'pro'} onPress={() => handleSubscribe('pro')} />
-            ) : (
-              <View style={styles.activeRow}>
-                <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
-                <Text style={styles.activeText}>Ativo até {formatDate(profile?.expires_at ?? null)}</Text>
+          {/* Features */}
+          <View style={styles.featureList}>
+            {FEATURES.map((f, i) => (
+              <View key={i} style={[styles.featureRow, i > 0 && styles.featureRowBorder]}>
+                <View style={[styles.featureIconWrap, { backgroundColor: f.color + '18' }]}>
+                  <Ionicons name={f.icon as any} size={16} color={f.color} />
+                </View>
+                <Text style={styles.featureText}>{f.text}</Text>
+                <Ionicons name="checkmark" size={16} color="#22c55e" />
               </View>
-            )
-          ) : (
-            <BuyButton label="Assinar Pro" loading={paying === 'pro'} onPress={() => handleSubscribe('pro')} />
-          )}
+            ))}
+          </View>
+
+          {/* CTA */}
+          <TouchableOpacity style={styles.ctaBtn} onPress={openFluxoX} activeOpacity={0.85}>
+            <Ionicons name="flash" size={18} color="white" />
+            <Text style={styles.ctaBtnText}>
+              {isPro ? 'Gerenciar assinatura no FluxoX' : 'Assinar agora no FluxoX'}
+            </Text>
+            <Ionicons name="open-outline" size={16} color="rgba(255,255,255,0.7)" />
+          </TouchableOpacity>
+
+          <Text style={styles.ctaNote}>
+            Você será redirecionado para o site do FluxoX para concluir o pagamento.
+          </Text>
         </View>
 
-        {/* ── Add-ons (só visíveis com Pro ativo) ── */}
-        <Text style={styles.sectionTitle}>Add-ons</Text>
-
-        {!isPro && (
-          <View style={styles.addonLocked}>
-            <Ionicons name="lock-closed-outline" size={16} color="#64748b" />
-            <Text style={styles.addonLockedText}>Disponíveis após assinar o plano Pro</Text>
-          </View>
-        )}
-
-        {/* Mesa */}
-        <View style={[styles.productCard, !isPro && styles.productCardDim]}>
-          <View style={styles.productHeader}>
-            <View style={[styles.productIconWrap, { backgroundColor: 'rgba(34,197,94,0.12)' }]}>
-              <Ionicons name="restaurant-outline" size={20} color="#22c55e" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.productName}>Add-on Mesas</Text>
-              <Text style={styles.productDesc}>Comandas e consumação por mesa</Text>
-            </View>
-            <View style={styles.priceWrap}>
-              <Text style={[styles.priceVal, { color: '#22c55e' }]}>R$ 6<Text style={styles.priceCents}>,99</Text></Text>
-              <Text style={styles.pricePer}>/mês</Text>
-            </View>
-          </View>
-
-          {isPro && (
-            isMesaActive ? (
-              <View style={styles.activeRow}>
-                <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
-                <Text style={styles.activeText}>Ativo até {formatDate(profile?.mesa_expires_at ?? null)}</Text>
-              </View>
-            ) : (
-              <BuyButton label="Ativar Mesas" color="#22c55e" loading={paying === 'mesa'} onPress={() => handleSubscribe('mesa')} />
-            )
-          )}
-        </View>
-
-        {/* Delivery */}
-        <View style={[styles.productCard, !isPro && styles.productCardDim]}>
-          <View style={styles.productHeader}>
-            <View style={[styles.productIconWrap, { backgroundColor: 'rgba(34,197,94,0.12)' }]}>
-              <Ionicons name="bicycle-outline" size={20} color="#22c55e" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.productName}>Add-on Delivery</Text>
-              <Text style={styles.productDesc}>Pipeline de pedidos e entregas</Text>
-            </View>
-            <View style={styles.priceWrap}>
-              <Text style={[styles.priceVal, { color: '#22c55e' }]}>R$ 6<Text style={styles.priceCents}>,99</Text></Text>
-              <Text style={styles.pricePer}>/mês</Text>
-            </View>
-          </View>
-
-          {isPro && (
-            isDelivActive ? (
-              <View style={styles.activeRow}>
-                <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
-                <Text style={styles.activeText}>Ativo até {formatDate(profile?.delivery_expires_at ?? null)}</Text>
-              </View>
-            ) : (
-              <BuyButton label="Ativar Delivery" color="#22c55e" loading={paying === 'delivery'} onPress={() => handleSubscribe('delivery')} />
-            )
-          )}
-        </View>
-
-        <Text style={styles.payNote}>
-          <Ionicons name="shield-checkmark-outline" size={12} color="#64748b" />
-          {'  '}Pix · Cartão · via Mercado Pago
-        </Text>
-
-        {/* O que está incluído no Pro */}
-        <Text style={styles.sectionTitle}>Incluído no Pro</Text>
-        <View style={styles.card}>
-          {[
-            { icon: 'infinite-outline',  text: 'Acesso ilimitado ao FluxoX',         color: '#6366f1' },
-            { icon: 'bar-chart-outline', text: 'Relatórios e backup de dados',        color: '#6366f1' },
-            { icon: 'headset-outline',   text: 'Suporte prioritário',                 color: '#f59e0b' },
-          ].map((f, i) => (
-            <View key={i} style={[styles.featureRow, i > 0 && styles.featureRowBorder]}>
-              <View style={[styles.featureIcon, { backgroundColor: `${f.color}18` }]}>
-                <Ionicons name={f.icon as any} size={17} color={f.color} />
-              </View>
-              <Text style={styles.featureText}>{f.text}</Text>
-            </View>
-          ))}
+        {/* Nota de suporte */}
+        <View style={styles.supportNote}>
+          <Ionicons name="help-circle-outline" size={16} color="#475569" />
+          <Text style={styles.supportNoteText}>
+            Dúvidas? Acesse{' '}
+            <Text style={styles.supportNoteLink} onPress={openFluxoX}>fluxox.carrd.co</Text>
+            {' '}ou entre em contato com o suporte.
+          </Text>
         </View>
 
         <View style={{ height: 40 }} />
@@ -263,125 +159,90 @@ export default function Subscription() {
   );
 }
 
-// ── Componente botão de compra ──────────────────────────────────────────────
-function BuyButton({
-  label, loading, onPress, color = '#6366f1',
-}: {
-  label: string; loading: boolean; onPress: () => void; color?: string;
-}) {
-  return (
-    <TouchableOpacity
-      style={[styles.btn, { backgroundColor: color }, loading && styles.btnDisabled]}
-      onPress={onPress}
-      disabled={loading}
-      activeOpacity={0.85}
-    >
-      {loading ? (
-        <ActivityIndicator color="white" size="small" />
-      ) : (
-        <>
-          <Ionicons name="flash-outline" size={16} color="white" />
-          <Text style={styles.btnText}>{label}</Text>
-        </>
-      )}
-    </TouchableOpacity>
-  );
-}
-
-// ── Estilos ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
   centered:  { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' },
 
   header: {
-    backgroundColor: '#0f172a',
-    paddingTop: 54,
-    paddingBottom: 18,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 28, paddingHorizontal: 28, paddingBottom: 20,
+    borderBottomWidth: 1, borderBottomColor: '#1e293b',
   },
-  backBtn:         { padding: 4 },
-  headerTitle:     { fontSize: 18, fontWeight: '800', color: '#f1f5f9' },
-  headerSub:       { fontSize: 12, color: '#94a3b8', marginTop: 1 },
-  headerBadge:     { marginLeft: 'auto', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  headerBadgePro:  { backgroundColor: 'rgba(34,197,94,0.15)', borderWidth: 1, borderColor: 'rgba(34,197,94,0.3)' },
-  headerBadgeFree: { backgroundColor: 'rgba(245,158,11,0.15)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)' },
-  headerBadgeText: { fontSize: 11, fontWeight: '800', color: '#f1f5f9' },
+  headerMobile: { paddingTop: 16, paddingHorizontal: 16, paddingBottom: 14 },
+  pageTitle:    { fontSize: 22, fontWeight: '700', color: '#f1f5f9' },
+  pageSubtitle: { fontSize: 13, color: '#64748b', marginTop: 2 },
 
-  content: { paddingHorizontal: 16, paddingTop: 8 },
+  planBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1,
+  },
+  planBadgePro:      { backgroundColor: 'rgba(245,158,11,0.12)', borderColor: 'rgba(245,158,11,0.35)' },
+  planBadgeFree:     { backgroundColor: 'rgba(100,116,139,0.1)', borderColor: '#334155' },
+  planBadgeText:     { fontSize: 11, fontWeight: '800' },
+  planBadgeTextPro:  { color: '#f59e0b' },
+  planBadgeTextFree: { color: '#64748b' },
 
-  statusCard:     { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 16, padding: 18, marginBottom: 20, borderWidth: 1 },
-  statusCardPro:  { backgroundColor: 'rgba(34,197,94,0.08)',  borderColor: 'rgba(34,197,94,0.25)' },
-  statusCardFree: { backgroundColor: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.25)' },
-  statusIconWrap: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' },
-  statusPlan:     { fontSize: 15, fontWeight: '700', color: '#f1f5f9' },
-  statusSub:      { fontSize: 12, color: '#94a3b8', marginTop: 3 },
+  content:       { paddingHorizontal: 28, paddingTop: 24 },
+  contentMobile: { paddingHorizontal: 16, paddingTop: 16 },
 
-  sectionTitle: { fontSize: 12, fontWeight: '700', color: '#64748b', marginBottom: 10, marginTop: 4, letterSpacing: 0.8, textTransform: 'uppercase' },
+  statusCard: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 12,
+    borderRadius: 14, padding: 16, marginBottom: 24, borderWidth: 1,
+  },
+  statusPro:   { backgroundColor: 'rgba(34,197,94,0.07)',  borderColor: 'rgba(34,197,94,0.2)' },
+  statusFree:  { backgroundColor: 'rgba(245,158,11,0.07)', borderColor: 'rgba(245,158,11,0.2)' },
+  statusTitle: { fontSize: 14, fontWeight: '700', color: '#f1f5f9', marginBottom: 2 },
+  statusSub:   { fontSize: 12, color: '#94a3b8', lineHeight: 17 },
 
-  productCard: {
+  fluxoxCard: {
     backgroundColor: '#1e293b',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: '#334155',
-  },
-  productCardDim:   { opacity: 0.45 },
-  productHeader:    { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
-  productIconWrap:  { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  productName:      { fontSize: 15, fontWeight: '700', color: '#f1f5f9' },
-  productDesc:      { fontSize: 12, color: '#94a3b8', marginTop: 2 },
-  priceWrap:        { alignItems: 'flex-end' },
-  priceVal:         { fontSize: 20, fontWeight: '800', color: '#6366f1' },
-  priceCents:       { fontSize: 14, fontWeight: '700' },
-  pricePer:         { fontSize: 11, color: '#64748b' },
-
-  activeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 2 },
-  activeText: { fontSize: 13, color: '#22c55e', fontWeight: '600' },
-
-  addonLocked: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(100,116,139,0.08)',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#1e293b',
-  },
-  addonLockedText: { fontSize: 13, color: '#64748b' },
-
-  btn: {
-    borderRadius: 12,
-    paddingVertical: 13,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  btnDisabled: { opacity: 0.6 },
-  btnText:     { color: 'white', fontSize: 15, fontWeight: '700' },
-
-  payNote: { fontSize: 12, color: '#64748b', marginTop: 4, marginBottom: 20, textAlign: 'center' },
-
-  card: {
-    backgroundColor: '#1e293b',
-    borderRadius: 16,
-    paddingHorizontal: 16,
+    overflow: 'hidden',
     marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#334155',
+    maxWidth: 600,
+    alignSelf: 'flex-start' as const,
+    width: '100%' as any,
   },
-  featureRow:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
-  featureRowBorder: { borderTopWidth: 1, borderTopColor: '#334155' },
-  featureIcon:      { width: 34, height: 34, borderRadius: 9, justifyContent: 'center', alignItems: 'center' },
-  featureText:      { fontSize: 14, color: '#f1f5f9', flex: 1 },
+  fluxoxCardTop: {
+    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+    backgroundColor: '#4f46e5',
+    padding: 24,
+    paddingBottom: 20,
+  } as any,
+  fluxoxLogoWrap: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  fluxoxLogo: { fontSize: 28, fontWeight: '900', color: 'white', letterSpacing: -1 },
+  proBadge: {
+    backgroundColor: '#f59e0b', paddingHorizontal: 8, paddingVertical: 3,
+    borderRadius: 6,
+  },
+  proBadgeText: { fontSize: 10, fontWeight: '900', color: 'white', letterSpacing: 1 },
+  fluxoxTagline: { fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 18 },
+
+  featureList: { paddingHorizontal: 20, paddingVertical: 8 },
+  featureRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11,
+  },
+  featureRowBorder: { borderTopWidth: 1, borderTopColor: '#0f172a' },
+  featureIconWrap: { width: 32, height: 32, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  featureText: { flex: 1, fontSize: 13, color: '#e2e8f0', fontWeight: '500' },
+
+  ctaBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: '#6366f1',
+    marginHorizontal: 20, marginTop: 8, marginBottom: 4,
+    paddingVertical: 15, borderRadius: 14,
+  },
+  ctaBtnText: { fontSize: 15, fontWeight: '700', color: 'white', flex: 1, textAlign: 'center' },
+  ctaNote: { fontSize: 11, color: '#475569', textAlign: 'center', padding: 12, paddingBottom: 20 },
+
+  supportNote: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
+    backgroundColor: '#1e293b', borderRadius: 12,
+    padding: 14, borderWidth: 1, borderColor: '#334155',
+    maxWidth: 600, width: '100%' as any,
+  },
+  supportNoteText: { flex: 1, fontSize: 13, color: '#64748b', lineHeight: 19 },
+  supportNoteLink: { color: '#6366f1', fontWeight: '600' },
 });
