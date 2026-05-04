@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, Modal, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, Modal, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { supabase } from '../lib/supabase';
@@ -95,6 +95,8 @@ const formatCurrency = (value: number): string => {
 };
 
 export default function Recipes() {
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [recipeName, setRecipeName] = useState('');
@@ -561,13 +563,9 @@ export default function Recipes() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View>
-            <Text style={styles.title}>{editingRecipeId ? 'Editando Receita' : 'Receitas'}</Text>
-            <Text style={styles.subtitle}>Crie e gerencie suas fichas técnicas</Text>
-          </View>
-        </View>
+      <View style={[styles.header, isMobile && { paddingTop: 16, paddingHorizontal: 16, paddingBottom: 14 }]}>
+        <Text style={styles.title}>{editingRecipeId ? 'Editando Receita' : 'Receitas'}</Text>
+        <Text style={styles.subtitle}>Crie e gerencie suas fichas técnicas</Text>
       </View>
 
       {!isAuthenticated && (

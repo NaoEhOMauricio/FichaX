@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Alert, TouchableOpacity,
-  ScrollView, Modal, ActivityIndicator, KeyboardAvoidingView, Platform,
+  ScrollView, Modal, ActivityIndicator, useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -11,6 +11,8 @@ type ProfileTab = 'perfil' | 'seguranca' | 'sessoes';
 
 export default function Auth() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
   // Auth state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -108,9 +110,15 @@ export default function Auth() {
         setPhone(session.user.user_metadata?.phone || '');
         setCpf(session.user.user_metadata?.cpf || '');
         setAddress(session.user.user_metadata?.address || { cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '' });
-        if (!session.user.user_metadata?.onboarding_complete) {
-          setShowOnboarding(true);
-        }
+        setShowOnboarding(!session.user.user_metadata?.onboarding_complete);
+      } else {
+        // Limpa tudo ao deslogar — evita dados do usuário anterior aparecerem
+        setDisplayName('');
+        setPhone('');
+        setCpf('');
+        setAddress({ cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '' });
+        setShowOnboarding(false);
+        setActiveTab('perfil');
       }
     });
     return () => subscription.unsubscribe();
@@ -561,8 +569,8 @@ export default function Auth() {
   // ══════════════════════════════════════
   if (!user) {
     return (
-      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={styles.authScroll} keyboardShouldPersistTaps="handled">
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={[styles.authScroll, !isMobile && styles.authScrollDesktop]} keyboardShouldPersistTaps="handled">
           {/* Header */}
           <View style={styles.authHeader}>
             <View style={styles.authIconCircle}>
@@ -575,7 +583,7 @@ export default function Auth() {
           </View>
 
           {/* Form */}
-          <View style={styles.formCard}>
+          <View style={[styles.formCard, !isMobile && styles.formCardDesktop]}>
             {isSignUp && (
               <>
                 <Text style={styles.inputLabel}>Nome completo *</Text>
@@ -723,8 +731,8 @@ export default function Auth() {
   // ══════════════════════════════════════
   if (user && showOnboarding) {
     return (
-      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView ref={scrollRef} contentContainerStyle={styles.authScroll} keyboardShouldPersistTaps="handled">
+      <View style={styles.container}>
+        <ScrollView ref={scrollRef} contentContainerStyle={[styles.authScroll, !isMobile && styles.authScrollDesktop]} keyboardShouldPersistTaps="handled">
           <View style={styles.authHeader}>
             <View style={[styles.authIconCircle, { backgroundColor: '#22c55e' }]}>
               <Ionicons name="person-add" size={36} color="white" />
@@ -733,7 +741,7 @@ export default function Auth() {
             <Text style={styles.authSubtitle}>Precisamos de mais algumas informações</Text>
           </View>
 
-          <View style={styles.formCard}>
+          <View style={[styles.formCard, !isMobile && styles.formCardDesktop]}>
             {/* Nome completo */}
             <View onLayout={trackField('nome')}>
               <Text style={styles.inputLabel}>Nome completo *</Text>
@@ -934,7 +942,7 @@ export default function Auth() {
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
     );
   }
 
@@ -1623,6 +1631,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 16,
     fontWeight: '500',
+  },
+  authScrollDesktop: {
+    justifyContent: 'center',
+    minHeight: '100%' as any,
+  },
+  formCardDesktop: {
+    maxWidth: 480,
+    alignSelf: 'center',
+    width: '100%' as any,
   },
   switchBtn: {
     marginTop: 24,

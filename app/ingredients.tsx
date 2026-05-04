@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, Modal, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, Modal, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 
@@ -60,6 +60,8 @@ const formatCurrency = (value: number): string => {
 };
 
 export default function Ingredients() {
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [filteredIngredients, setFilteredIngredients] = useState<Ingredient[]>([]);
   const [name, setName] = useState('');
@@ -221,15 +223,19 @@ export default function Ingredients() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View>
+      <View style={[styles.header, isMobile && styles.headerMobile]}>
+        <View style={[styles.headerContent, isMobile && styles.headerContentMobile]}>
+          <View style={{ flex: 1 }}>
             <Text style={styles.title}>Ingredientes</Text>
             <Text style={styles.subtitle}>Gerencie seus ingredientes base</Text>
           </View>
-          <TouchableOpacity style={styles.addHeaderBtn} onPress={() => { setName(''); setCost(''); setPackageWeight(''); setPackageUnit('kg'); setShowAddModal(true); }} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.addHeaderBtn, isMobile && styles.addHeaderBtnMobile]}
+            onPress={() => { setName(''); setCost(''); setPackageWeight(''); setPackageUnit('kg'); setShowAddModal(true); }}
+            activeOpacity={0.7}
+          >
             <Ionicons name="add" size={18} color="white" />
-            <Text style={styles.addHeaderBtnText}>Novo ingrediente</Text>
+            {!isMobile && <Text style={styles.addHeaderBtnText}>Novo ingrediente</Text>}
           </TouchableOpacity>
         </View>
       </View>
@@ -513,10 +519,27 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#1e293b',
   },
+  headerMobile: {
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+  },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  headerContentMobile: {
+    alignItems: 'flex-start',
+  },
+  addHeaderBtnMobile: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    paddingHorizontal: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
   },
   title: {
     fontSize: 22,
