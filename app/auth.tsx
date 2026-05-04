@@ -722,7 +722,7 @@ export default function Auth() {
             </View>
           </View>
         </Modal>
-      </KeyboardAvoidingView>
+      </View>
     );
   }
 
