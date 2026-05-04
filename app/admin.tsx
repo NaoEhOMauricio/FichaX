@@ -167,16 +167,22 @@ export default function Admin() {
 
       if (error) {
         let errText = error.message || 'Erro ao chamar função admin';
+        let retryAfterSeconds = 0;
         const errAny = error as any;
+        const headerRetry = errAny?.context?.headers?.get?.('retry-after');
+        if (headerRetry) retryAfterSeconds = Number(headerRetry) || 0;
         if (errAny?.context?.json) {
           try {
             const body = await errAny.context.json();
             if (body?.error) errText = body.error;
+            if (body?.retry_after_seconds) retryAfterSeconds = Number(body.retry_after_seconds) || retryAfterSeconds;
           } catch {}
         }
         setActionMsg({ text: errText, ok: false });
-        if (action === 'send_setup_email' && errText.toLowerCase().includes('limite')) {
-          setEmailCooldownUntil(prev => ({ ...prev, [userId]: Date.now() + 60_000 }));
+        const rateLimitHit = /limite|rate limit|too many requests|security purposes/i.test(errText);
+        if (action === 'send_setup_email' && rateLimitHit) {
+          const secs = retryAfterSeconds > 0 ? retryAfterSeconds : 300;
+          setEmailCooldownUntil(prev => ({ ...prev, [userId]: Date.now() + secs * 1000 }));
         }
         setActionLoading(null);
         setTimeout(() => setActionMsg(null), 4000);
@@ -253,7 +259,9 @@ export default function Admin() {
     const leftMs = (emailCooldownUntil[userId] ?? 0) - nowTick;
     if (leftMs <= 0) return null;
     const left = Math.ceil(leftMs / 1000);
-    return `Aguardar ${left}s`;
+    const min = Math.floor(left / 60);
+    const sec = left % 60;
+    return min > 0 ? `Aguardar ${min}m ${String(sec).padStart(2, '0')}s` : `Aguardar ${left}s`;
   };
 
   return (

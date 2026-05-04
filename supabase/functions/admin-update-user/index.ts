@@ -13,6 +13,21 @@ const isRateLimitError = (message: string) => {
   return m.includes('rate limit') || m.includes('security purposes') || m.includes('too many requests')
 }
 
+const guessRetryAfterSeconds = (message: string) => {
+  const m = message.toLowerCase()
+  const match = m.match(/(\d+)\s*(second|seconds|minute|minutes|hour|hours)/)
+  if (match) {
+    const n = Number(match[1])
+    const unit = match[2]
+    if (unit.startsWith('hour')) return n * 3600
+    if (unit.startsWith('minute')) return n * 60
+    return n
+  }
+  if (m.includes('hour')) return 3600
+  if (m.includes('minute')) return 300
+  return 60
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
@@ -98,11 +113,13 @@ serve(async (req) => {
 
       if (magicLink.error) {
         if (isRateLimitError(magicLink.error.message)) {
+          const retryAfter = guessRetryAfterSeconds(magicLink.error.message)
           return new Response(JSON.stringify({
-            error: 'Limite de envio atingido. Aguarde 60 segundos e tente novamente.',
+            error: `Limite de envio atingido. Aguarde ${retryAfter}s e tente novamente.`,
+            retry_after_seconds: retryAfter,
           }), {
             status: 429,
-            headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
+            headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': String(retryAfter) },
           })
         }
 
