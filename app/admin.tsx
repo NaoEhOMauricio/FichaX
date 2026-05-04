@@ -5,8 +5,6 @@ import { useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
 
 const ADMIN_EMAIL   = 'leonardo.clemente.braga@gmail.com';
-const SUPABASE_URL  = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const SUPABASE_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
 interface UserProfile {
   id: string;
@@ -148,16 +146,26 @@ export default function Admin() {
     setActionLoading(userId + action);
     setActionMsg(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-update-user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token ?? SUPABASE_ANON}`,
-        },
-        body: JSON.stringify({ action, user_id: userId, ...extra }),
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setActionMsg({ text: 'Não autenticado. Faça login novamente.', ok: false });
+        setActionLoading(null);
+        setTimeout(() => setActionMsg(null), 4000);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('admin-update-user', {
+        body: { action, user_id: userId, ...extra },
       });
-      const json = await res.json();
+
+      if (error) {
+        setActionMsg({ text: error.message || 'Erro ao chamar função admin', ok: false });
+        setActionLoading(null);
+        setTimeout(() => setActionMsg(null), 4000);
+        return;
+      }
+
+      const json = data as { ok?: boolean; error?: string };
       if (json.ok) {
         setActionMsg({ text: 'Atualizado com sucesso!', ok: true });
         fetchData();
