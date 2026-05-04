@@ -8,6 +8,11 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const isRateLimitError = (message: string) => {
+  const m = message.toLowerCase()
+  return m.includes('rate limit') || m.includes('security purposes') || m.includes('too many requests')
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
@@ -82,27 +87,34 @@ serve(async (req) => {
         })
       }
 
-      const redirectTo = Deno.env.get('APP_AUTH_REDIRECT_URL')
-      const resetWithService = redirectTo
-        ? await db.auth.resetPasswordForEmail(targetEmail, { redirectTo })
-        : await db.auth.resetPasswordForEmail(targetEmail)
+      const redirectTo = (body.redirect_to as string | undefined) || Deno.env.get('APP_AUTH_REDIRECT_URL')
+      const magicLink = await publicAuth.auth.signInWithOtp({
+        email: targetEmail,
+        options: {
+          shouldCreateUser: false,
+          ...(redirectTo ? { emailRedirectTo: redirectTo } : {}),
+        },
+      })
 
-      if (resetWithService.error) {
-        const resetWithAnon = redirectTo
-          ? await publicAuth.auth.resetPasswordForEmail(targetEmail, { redirectTo })
-          : await publicAuth.auth.resetPasswordForEmail(targetEmail)
-
-        if (resetWithAnon.error) {
-          return new Response(JSON.stringify({ error: resetWithAnon.error.message }), {
-            status: 400,
-            headers: { ...cors, 'Content-Type': 'application/json' },
+      if (magicLink.error) {
+        if (isRateLimitError(magicLink.error.message)) {
+          return new Response(JSON.stringify({
+            error: 'Limite de envio atingido. Aguarde 60 segundos e tente novamente.',
+          }), {
+            status: 429,
+            headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
           })
         }
+
+        return new Response(JSON.stringify({ error: magicLink.error.message }), {
+          status: 400,
+          headers: { ...cors, 'Content-Type': 'application/json' },
+        })
       }
 
       return new Response(JSON.stringify({
         ok: true,
-        message: `E-mail enviado para ${targetEmail}.`,
+        message: `E-mail de acesso enviado para ${targetEmail}.`,
       }), {
         headers: { ...cors, 'Content-Type': 'application/json' }
       })

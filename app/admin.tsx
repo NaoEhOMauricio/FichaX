@@ -66,6 +66,8 @@ export default function Admin() {
   const [filterPlan, setFilterPlan] = useState<'all' | 'pro' | 'free'>('all');
   const [actionMsg, setActionMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null); // userId em ação
+  const [emailCooldownUntil, setEmailCooldownUntil] = useState<Record<string, number>>({});
+  const [nowTick, setNowTick] = useState(Date.now());
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -79,6 +81,11 @@ export default function Admin() {
         fetchData();
       }
     });
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(id);
   }, []);
 
   const fetchData = async () => {
@@ -168,6 +175,9 @@ export default function Admin() {
           } catch {}
         }
         setActionMsg({ text: errText, ok: false });
+        if (action === 'send_setup_email' && errText.toLowerCase().includes('limite')) {
+          setEmailCooldownUntil(prev => ({ ...prev, [userId]: Date.now() + 60_000 }));
+        }
         setActionLoading(null);
         setTimeout(() => setActionMsg(null), 4000);
         return;
@@ -176,6 +186,9 @@ export default function Admin() {
       const json = data as { ok?: boolean; error?: string; message?: string };
       if (json.ok) {
         setActionMsg({ text: json.message ?? 'Atualizado com sucesso!', ok: true });
+        if (action === 'send_setup_email') {
+          setEmailCooldownUntil(prev => ({ ...prev, [userId]: Date.now() + 60_000 }));
+        }
         fetchData();
       } else {
         setActionMsg({ text: json.error ?? 'Erro desconhecido', ok: false });
@@ -234,6 +247,13 @@ export default function Admin() {
   const isOnboardingIncomplete = (u: UserProfile) => {
     const addr = u.address ?? {};
     return !u.display_name || !u.phone || !u.cpf || !addr.rua || !addr.numero || !addr.bairro || !addr.cidade || !addr.estado;
+  };
+
+  const getCooldownLabel = (userId: string) => {
+    const leftMs = (emailCooldownUntil[userId] ?? 0) - nowTick;
+    if (leftMs <= 0) return null;
+    const left = Math.ceil(leftMs / 1000);
+    return `Aguardar ${left}s`;
   };
 
   return (
@@ -469,14 +489,17 @@ export default function Admin() {
 
                       <TouchableOpacity
                         style={[styles.actionBtn, styles.actionBtnEmail]}
-                        onPress={() => adminAction('send_setup_email', user.id, { email: user.email })}
-                        disabled={actionLoading === user.id + 'send_setup_email' || !user.email}
+                        onPress={() => adminAction('send_setup_email', user.id, {
+                          email: user.email,
+                          redirect_to: typeof window !== 'undefined' ? `${window.location.origin}/auth` : undefined,
+                        })}
+                        disabled={actionLoading === user.id + 'send_setup_email' || !user.email || !!getCooldownLabel(user.id)}
                       >
                         <Ionicons name="mail-outline" size={13} color="#38bdf8" />
                         <Text style={[styles.actionBtnText, { color: '#38bdf8' }]}> 
                           {actionLoading === user.id + 'send_setup_email'
                             ? '...'
-                            : (isOnboardingIncomplete(user) ? 'Enviar email para concluir cadastro' : 'Enviar email de acesso')}
+                            : (getCooldownLabel(user.id) ?? (isOnboardingIncomplete(user) ? 'Enviar email para concluir cadastro' : 'Enviar email de acesso'))}
                         </Text>
                       </TouchableOpacity>
                     </View>
