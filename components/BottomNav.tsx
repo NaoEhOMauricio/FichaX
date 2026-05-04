@@ -4,6 +4,8 @@ import { usePathname, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 
+const ADMIN_EMAIL = 'leonardo.clemente.braga@gmail.com';
+
 const NAV_ITEMS = [
   { href: '/',             icon: 'book-outline',      iconActive: 'book',            label: 'Cardápio',     color: '#6366f1' },
   { href: '/ingredients',  icon: 'leaf-outline',       iconActive: 'leaf',            label: 'Ingredientes', color: '#22c55e' },
@@ -16,12 +18,21 @@ export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
   const [loggedIn, setLoggedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => setLoggedIn(!!session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => setLoggedIn(!!session));
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setLoggedIn(!!session);
+      setUserEmail(session?.user?.email || '');
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setLoggedIn(!!session);
+      setUserEmail(session?.user?.email || '');
+    });
     return () => subscription.unsubscribe();
   }, []);
+
+  const isAdmin = userEmail === ADMIN_EMAIL;
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' || pathname === '/index' : pathname.startsWith(href);
@@ -49,6 +60,23 @@ export default function BottomNav() {
           </TouchableOpacity>
         );
       })}
+      {isAdmin && (
+        <TouchableOpacity
+          style={styles.item}
+          onPress={() => router.push('/admin')}
+          activeOpacity={0.7}
+        >
+          {isActive('/admin') && <View style={[styles.activePill, { backgroundColor: '#6366f1' }]} />}
+          <Ionicons
+            name={isActive('/admin') ? 'shield-checkmark' : 'shield-checkmark-outline'}
+            size={22}
+            color={isActive('/admin') ? '#6366f1' : '#475569'}
+          />
+          <Text style={[styles.label, isActive('/admin') && { color: '#6366f1', fontWeight: '700' }]}>
+            Admin
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
