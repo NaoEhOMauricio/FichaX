@@ -100,14 +100,18 @@ export default function Admin() {
       const ingredients = ingredientsRes.data ?? [];
       const subs = subRes.data ?? [];
 
+      // Debug: se user_profiles retornou vazio, a policy de admin pode estar faltando
+      if (subRes.error) console.warn('user_profiles error:', subRes.error.message);
+
       const recipeCount: Record<string, number> = {};
       recipes.forEach((r: any) => { recipeCount[r.user_id] = (recipeCount[r.user_id] || 0) + 1; });
 
       const ingCount: Record<string, number> = {};
       ingredients.forEach((i: any) => { ingCount[i.user_id] = (ingCount[i.user_id] || 0) + 1; });
 
+      // user_profiles usa "id" como chave primária (não user_id)
       const subMap: Record<string, any> = {};
-      subs.forEach((s: any) => { subMap[s.user_id] = s; });
+      subs.forEach((s: any) => { subMap[s.id] = s; });
 
       const merged: UserProfile[] = profiles.map((p: any) => {
         const sub = subMap[p.id] ?? {};
