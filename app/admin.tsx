@@ -82,11 +82,13 @@ export default function Admin() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [profilesRes, recipesRes, ingredientsRes, subRes] = await Promise.all([
+      // recipes e ingredients NÃO têm mais política de admin
+      // contamos via RPC (função SQL com SECURITY DEFINER)
+      const [profilesRes, subRes, recipeRpc, ingRpc] = await Promise.all([
         supabase.from('profiles').select('*'),
-        supabase.from('recipes').select('user_id'),
-        supabase.from('ingredients').select('user_id'),
         supabase.from('user_profiles').select('*'),
+        supabase.rpc('admin_recipe_counts'),
+        supabase.rpc('admin_ingredient_counts'),
       ]);
 
       if (profilesRes.error?.code === '42P01' || profilesRes.error?.code === 'PGRST116') {
@@ -96,18 +98,15 @@ export default function Admin() {
       }
 
       const profiles = profilesRes.data ?? [];
-      const recipes = recipesRes.data ?? [];
-      const ingredients = ingredientsRes.data ?? [];
       const subs = subRes.data ?? [];
 
-      // Debug: se user_profiles retornou vazio, a policy de admin pode estar faltando
       if (subRes.error) console.warn('user_profiles error:', subRes.error.message);
 
       const recipeCount: Record<string, number> = {};
-      recipes.forEach((r: any) => { recipeCount[r.user_id] = (recipeCount[r.user_id] || 0) + 1; });
+      (recipeRpc.data ?? []).forEach((r: any) => { recipeCount[r.user_id] = r.count; });
 
       const ingCount: Record<string, number> = {};
-      ingredients.forEach((i: any) => { ingCount[i.user_id] = (ingCount[i.user_id] || 0) + 1; });
+      (ingRpc.data ?? []).forEach((i: any) => { ingCount[i.user_id] = i.count; });
 
       // user_profiles usa "id" como chave primária (não user_id)
       const subMap: Record<string, any> = {};
