@@ -497,10 +497,7 @@ export default function Admin() {
 
                       <TouchableOpacity
                         style={[styles.actionBtn, styles.actionBtnEmail]}
-                        onPress={() => adminAction('send_setup_email', user.id, {
-                          email: user.email,
-                          redirect_to: typeof window !== 'undefined' ? `${window.location.origin}/auth` : undefined,
-                        })}
+                        onPress={() => adminAction('send_setup_email', user.id, { email: user.email })}
                         disabled={actionLoading === user.id + 'send_setup_email' || !user.email || !!getCooldownLabel(user.id)}
                       >
                         <Ionicons name="mail-outline" size={13} color="#38bdf8" />

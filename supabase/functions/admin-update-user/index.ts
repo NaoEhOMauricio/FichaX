@@ -102,7 +102,7 @@ serve(async (req) => {
         })
       }
 
-      const redirectTo = (body.redirect_to as string | undefined) || Deno.env.get('APP_AUTH_REDIRECT_URL')
+      const redirectTo = Deno.env.get('APP_AUTH_REDIRECT_URL')
       const magicLink = await publicAuth.auth.signInWithOtp({
         email: targetEmail,
         options: {
@@ -131,7 +131,7 @@ serve(async (req) => {
 
       return new Response(JSON.stringify({
         ok: true,
-        message: `E-mail de acesso enviado para ${targetEmail}.`,
+        message: `Link de acesso enviado para ${targetEmail}.`,
       }), {
         headers: { ...cors, 'Content-Type': 'application/json' }
       })
